@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Privacy Policy — DIST TRKR</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400&family=Syne:wght@700;800&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:     #141416;
+  --panel:  #1c1c1f;
+  --border: rgba(255,255,255,0.07);
+  --accent: #00e5ff;
+  --green:  #39ff14;
+  --dim:    #555;
+  --mid:    #888;
+  --text:   #e0e0e0;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  line-height: 1.7;
+  padding: 0 0 80px;
+}
+
+/* Header */
+.site-header {
+  border-bottom: 1px solid var(--border);
+  padding: 20px 40px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.logo {
+  font-family: 'Syne', sans-serif;
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--text);
+  letter-spacing: 1px;
+  text-decoration: none;
+}
+
+.logo-dot { color: var(--accent); }
+
+.badge {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  color: var(--dim);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 4px 12px;
+  letter-spacing: 1px;
+}
+
+/* Hero */
+.hero {
+  max-width: 760px;
+  margin: 60px auto 0;
+  padding: 0 40px;
+}
+
+.hero-tag {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  color: var(--accent);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin-bottom: 16px;
+}
+
+.hero-title {
+  font-family: 'Syne', sans-serif;
+  font-size: clamp(36px, 6vw, 56px);
+  font-weight: 800;
+  line-height: 1.05;
+  color: #fff;
+  margin-bottom: 20px;
+}
+
+.hero-sub {
+  font-size: 15px;
+  color: var(--mid);
+  max-width: 520px;
+  line-height: 1.65;
+}
+
+.hero-meta {
+  display: flex;
+  gap: 24px;
+  margin-top: 28px;
+  padding-top: 28px;
+  border-top: 1px solid var(--border);
+}
+
+.meta-item { display: flex; flex-direction: column; gap: 4px; }
+.meta-label { font-family: 'DM Mono', monospace; font-size: 10px; color: var(--dim); letter-spacing: 1px; text-transform: uppercase; }
+.meta-val   { font-family: 'DM Sans', sans-serif; font-size: 13px; color: var(--mid); }
+
+/* Content */
+.content {
+  max-width: 760px;
+  margin: 60px auto 0;
+  padding: 0 40px;
+}
+
+/* Summary cards */
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  margin-bottom: 56px;
+}
+
+.summary-card {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 18px 20px;
+}
+
+.summary-icon { font-size: 22px; margin-bottom: 10px; }
+
+.summary-title {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 6px;
+}
+
+.summary-body {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 12px;
+  color: var(--mid);
+  line-height: 1.55;
+}
+
+.summary-card.good  { border-color: rgba(57,255,20,0.2); }
+.summary-card.note  { border-color: rgba(0,229,255,0.2); }
+.summary-card.info  { border-color: rgba(255,255,255,0.1); }
+
+/* Sections */
+.section {
+  margin-bottom: 48px;
+  padding-bottom: 48px;
+  border-bottom: 1px solid var(--border);
+}
+.section:last-child { border-bottom: none; }
+
+.section-num {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  color: var(--dim);
+  letter-spacing: 2px;
+  margin-bottom: 8px;
+}
+
+.section-title {
+  font-family: 'Syne', sans-serif;
+  font-size: 22px;
+  font-weight: 700;
+  color: #fff;
+  margin-bottom: 16px;
+}
+
+.section p {
+  font-size: 15px;
+  color: var(--mid);
+  margin-bottom: 14px;
+  line-height: 1.7;
+}
+
+.section p:last-child { margin-bottom: 0; }
+
+.section ul {
+  list-style: none;
+  margin: 14px 0;
+}
+
+.section ul li {
+  font-size: 15px;
+  color: var(--mid);
+  padding: 6px 0 6px 20px;
+  position: relative;
+  line-height: 1.6;
+}
+
+.section ul li::before {
+  content: '—';
+  position: absolute;
+  left: 0;
+  color: var(--dim);
+  font-family: 'DM Mono', monospace;
+}
+
+.highlight-box {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 18px 20px;
+  margin: 20px 0;
+}
+
+.highlight-box.green { border-color: rgba(57,255,20,0.2); background: rgba(57,255,20,0.03); }
+.highlight-box.blue  { border-color: rgba(0,229,255,0.2); background: rgba(0,229,255,0.03); }
+
+.highlight-box p { margin: 0; font-size: 14px; }
+
+strong { color: var(--text); font-weight: 600; }
+
+/* Contact */
+.contact-card {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 28px 32px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.contact-text h3 {
+  font-family: 'Syne', sans-serif;
+  font-size: 18px;
+  font-weight: 700;
+  color: #fff;
+  margin-bottom: 6px;
+}
+.contact-text p { font-size: 14px; color: var(--mid); margin: 0; }
+
+.contact-link {
+  font-family: 'DM Mono', monospace;
+  font-size: 13px;
+  color: var(--accent);
+  text-decoration: none;
+  border: 1px solid rgba(0,229,255,0.3);
+  border-radius: 10px;
+  padding: 10px 20px;
+  white-space: nowrap;
+  transition: all 0.15s;
+}
+.contact-link:hover { background: rgba(0,229,255,0.08); }
+
+/* Footer */
+footer {
+  max-width: 760px;
+  margin: 48px auto 0;
+  padding: 0 40px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.footer-logo {
+  font-family: 'Syne', sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--dim);
+}
+
+.footer-note {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  color: #2a2a2e;
+  letter-spacing: 1px;
+}
+
+@media (max-width: 600px) {
+  .site-header { padding: 16px 20px; }
+  .hero, .content { padding: 0 20px; }
+  .hero { margin-top: 40px; }
+  .content { margin-top: 40px; }
+  .hero-meta { flex-direction: column; gap: 16px; }
+  .contact-card { flex-direction: column; align-items: flex-start; }
+  footer { padding: 0 20px; }
+}
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <a class="logo" href="#">DIST<span class="logo-dot"> </span>TRKR</a>
+  <span class="badge">LEGAL</span>
+</header>
+
+<div class="hero">
+  <div class="hero-tag">Privacy Policy</div>
+  <h1 class="hero-title">We don't collect<br>your data.</h1>
+  <p class="hero-sub">DIST TRKR is a GPS distance measurement tool. Everything stays on your device. Plain and simple.</p>
+  <div class="hero-meta">
+    <div class="meta-item">
+      <span class="meta-label">Effective Date</span>
+      <span class="meta-val">May 2, 2026</span>
+    </div>
+    <div class="meta-item">
+      <span class="meta-label">Last Updated</span>
+      <span class="meta-val">May 2, 2026</span>
+    </div>
+    <div class="meta-item">
+      <span class="meta-label">Applies To</span>
+      <span class="meta-val">iOS · Android · Web</span>
+    </div>
+  </div>
+</div>
+
+<div class="content">
+
+  <!-- Summary cards -->
+  <div class="summary-grid" style="margin-top:48px;">
+    <div class="summary-card good">
+      <div class="summary-icon">📍</div>
+      <div class="summary-title">Location stays local</div>
+      <div class="summary-body">GPS data is used only to calculate distance. It is never transmitted off your device.</div>
+    </div>
+    <div class="summary-card good">
+      <div class="summary-icon">🗄️</div>
+      <div class="summary-title">No accounts required</div>
+      <div class="summary-body">No sign-up, no login, no profile. You are anonymous to us.</div>
+    </div>
+    <div class="summary-card good">
+      <div class="summary-icon">📵</div>
+      <div class="summary-title">No data sold</div>
+      <div class="summary-body">We do not sell, rent, or share your personal information with third parties.</div>
+    </div>
+    <div class="summary-card note">
+      <div class="summary-icon">📢</div>
+      <div class="summary-title">Ads are served</div>
+      <div class="summary-body">We use Google AdMob to show ads. AdMob may use limited device info per its own policy.</div>
+    </div>
+  </div>
+
+  <!-- 1. Who we are -->
+  <div class="section">
+    <div class="section-num">01</div>
+    <h2 class="section-title">Who We Are</h2>
+    <p>DIST TRKR is a mobile and web application for measuring GPS point-to-point distances. This Privacy Policy describes how the app handles information when you use it on iOS, Android, or via the web.</p>
+    <p>For questions about this policy, contact us at the address listed at the bottom of this page.</p>
+  </div>
+
+  <!-- 2. Location data -->
+  <div class="section">
+    <div class="section-num">02</div>
+    <h2 class="section-title">Location Data</h2>
+    <p>DIST TRKR requests access to your device's GPS in order to function. Here is exactly how that data is used:</p>
+    <ul>
+      <li>Your GPS coordinates are read from your device to calculate the distance between Point A and Point B.</li>
+      <li>Coordinates are stored locally on your device only — in your browser's local storage (web) or AsyncStorage (iOS/Android).</li>
+      <li>Location data is <strong>never transmitted</strong> to any server, cloud service, or third party by DIST TRKR.</li>
+      <li>Location data is <strong>never used</strong> for advertising targeting, profiling, or any purpose other than displaying distances to you.</li>
+    </ul>
+    <div class="highlight-box green">
+      <p><strong>Bottom line:</strong> Your GPS data never leaves your device. When you delete the app or clear app data, all stored measurements are permanently deleted.</p>
+    </div>
+  </div>
+
+  <!-- 3. Stored measurements -->
+  <div class="section">
+    <div class="section-num">03</div>
+    <h2 class="section-title">Stored Measurements</h2>
+    <p>Measurements you take are saved locally on your device so they persist between sessions. Each saved measurement may include:</p>
+    <ul>
+      <li>GPS coordinates of Point A and Point B</li>
+      <li>Altitude (elevation) at each point, if available</li>
+      <li>Calculated distance</li>
+      <li>Date and time of the measurement</li>
+      <li>A name you assign (e.g. "Back fence line")</li>
+    </ul>
+    <p>This data exists only on your device. You can export it as a JSON file at any time using the Export function, and you can delete individual measurements or reset all data within the app.</p>
+  </div>
+
+  <!-- 4. Advertising -->
+  <div class="section">
+    <div class="section-num">04</div>
+    <h2 class="section-title">Advertising</h2>
+    <p>DIST TRKR displays banner advertisements to support continued development. Ads are served by <strong>Google AdMob</strong>.</p>
+    <div class="highlight-box blue">
+      <p>AdMob may collect limited device information such as your device's advertising ID, IP address, and general location in order to serve relevant ads. This is governed by <strong>Google's Privacy Policy</strong> at <strong>policies.google.com/privacy</strong>, not by this policy.</p>
+    </div>
+    <p>We configure ads to be non-personalized where possible and never display ads during active GPS measurement operations. You will not see interstitial, video, or full-screen ads — only a small, unobtrusive banner.</p>
+    <p>You can opt out of personalized advertising at any time through your device settings:</p>
+    <ul>
+      <li><strong>iOS:</strong> Settings → Privacy & Security → Apple Advertising → turn off Personalized Ads</li>
+      <li><strong>Android:</strong> Settings → Google → Ads → Delete advertising ID</li>
+    </ul>
+  </div>
+
+  <!-- 5. Permissions -->
+  <div class="section">
+    <div class="section-num">05</div>
+    <h2 class="section-title">App Permissions</h2>
+    <p>DIST TRKR requests only the permissions it needs:</p>
+    <ul>
+      <li><strong>Location (While Using App):</strong> Required to read GPS coordinates. The app does not request background location access.</li>
+    </ul>
+    <p>No other permissions — camera, contacts, microphone, notifications, or storage — are requested or used.</p>
+  </div>
+
+  <!-- 6. Children -->
+  <div class="section">
+    <div class="section-num">06</div>
+    <h2 class="section-title">Children's Privacy</h2>
+    <p>DIST TRKR does not knowingly collect any personal information from children under the age of 13. The app does not require account creation and does not transmit any user data. If you are a parent or guardian and believe your child has used this app, please note that no data has been collected or transmitted.</p>
+  </div>
+
+  <!-- 7. Changes -->
+  <div class="section">
+    <div class="section-num">07</div>
+    <h2 class="section-title">Changes to This Policy</h2>
+    <p>If this policy changes materially — for example, if we ever add cloud sync or user accounts — we will update this page and revise the "Last Updated" date. Continued use of the app after changes constitutes acceptance of the revised policy.</p>
+    <p>We do not anticipate significant changes to this policy as the app is designed to be data-minimal by principle.</p>
+  </div>
+
+  <!-- 8. Contact -->
+  <div class="section">
+    <div class="section-num">08</div>
+    <h2 class="section-title">Contact</h2>
+    <p>Questions, concerns, or requests related to this privacy policy can be directed to:</p>
+    <div class="contact-card" style="margin-top:20px;">
+      <div class="contact-text">
+        <h3>DIST TRKR Privacy</h3>
+        <p>We aim to respond to all inquiries within 5 business days.</p>
+      </div>
+      <a class="contact-link" href="mailto:privacy@disttracker.com">privacy@disttracker.com</a>
+    </div>
+  </div>
+
+</div>
+
+<footer>
+  <div class="footer-logo">DIST TRKR</div>
+  <div class="footer-note">© 2026 · DIST TRKR · ALL RIGHTS RESERVED</div>
+</footer>
+
+</body>
+</html>
