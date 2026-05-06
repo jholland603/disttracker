@@ -143,6 +143,10 @@ html, body {
   animation: none;
 }
 @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.25} }
+@keyframes warmup-pulse {
+  0%,100% { box-shadow: 0 0 0 0 rgba(0,229,255,0.5); opacity: 0.5; }
+  50%     { box-shadow: 0 0 0 8px rgba(0,229,255,0); opacity: 0.8; }
+}
 
 /* ── HERO ── */
 .hero {
@@ -264,6 +268,7 @@ html, body {
 
 .btn-a         { background: var(--accent); color: #000; }
 .btn-a:hover:not(:disabled) { background: #33eaff; }
+.btn-a-warmup  { background: rgba(0,229,255,0.15); color: var(--accent); border: 1.5px solid rgba(0,229,255,0.4); animation: warmup-pulse 1.4s ease-in-out infinite; }
 .btn-a-done    { background: rgba(0,229,255,0.1); color: var(--accent); border: 1.5px solid rgba(0,229,255,0.3); }
 .btn-a-loading { background: #ffbe00; color: #000; animation: blink 0.7s infinite; }
 .btn-b         { background: transparent; color: var(--green); border: 1.5px solid rgba(57,255,20,0.5); }
@@ -1074,7 +1079,8 @@ html, body {
       <div class="detail-unit" id="detailUnit"></div>
       <div class="detail-date" id="detailDate"></div>
     </div>
-    <div style="padding:0 12px 8px; flex-shrink:0;">
+    <div class="detail-cards" id="detailCards" style="flex:1; overflow-y:auto; padding:0 12px 12px;"></div>
+    <div style="padding:0 12px 16px; flex-shrink:0;">
       <button onclick="openMap()" style="
         width:100%; padding:14px; border-radius:12px;
         background: rgba(0,229,255,0.1); border: 1.5px solid rgba(0,229,255,0.3);
@@ -1083,7 +1089,6 @@ html, body {
         🗺 View on Map
       </button>
     </div>
-    <div class="detail-cards" id="detailCards" style="flex:1; overflow-y:auto; padding:0 12px 12px;"></div>
   </div>
 
   <!-- ══ MAP SCREEN ══ -->
@@ -1380,15 +1385,21 @@ function startWarmup() {
           const good = warmupBuffer.filter(p => p.acc <= profile.maxAccuracy).length;
           const btn = document.getElementById('btnA');
           if (good >= profile.minSamples) {
+            // Warmup complete — enable button, stop pulsing
             setStatus('GPS ready — tap Set Point A', 'ok');
             if (btn && btn.textContent !== 'Point A ✓') {
               btn.textContent = 'Set Point A ✓';
-              btn.style.borderColor = 'rgba(57,255,20,0.4)';
+              btn.className = 'point-btn btn-a';
+              btn.style.borderColor = '';
+              btn.disabled = false;
             }
           } else {
+            // Still warming up — disable button, pulse glow
             setStatus('GPS warming up… ' + good + '/' + profile.minSamples + ' samples', null);
             if (btn && btn.textContent !== 'Point A ✓') {
               btn.textContent = 'Set Point A (' + good + '/' + profile.minSamples + ')';
+              btn.className = 'point-btn btn-a-warmup';
+              btn.disabled = true;
             }
           }
         }
@@ -1526,6 +1537,15 @@ function setPointA() {
   if (!navigator.geolocation) { setStatus('GPS not supported in this browser', 'error'); return; }
   stopLive();
   acquiringPoint = true;
+
+  // If re-tapping after Point A already set, stop the existing warmup,
+  // clear the buffer (was collecting for Point B), and restart fresh
+  if (pointA) {
+    pointA = null;
+    stopWarmup();
+    warmupBuffer = [];
+    startWarmup();
+  }
   // NOTE: do NOT clear warmupBuffer here — we want to use it!
 
   // Reset display to zero immediately on tap
@@ -1644,8 +1664,11 @@ function resetAll() {
   el.textContent = '0'; el.className = 'distance-number zero';
 
   document.getElementById('btnA').textContent = 'Set Point A';
-  document.getElementById('btnA').className = 'point-btn btn-a';
-  document.getElementById('btnA').disabled = false;
+  document.getElementById('btnA').className = 'point-btn btn-a-warmup';
+  document.getElementById('btnA').disabled = true;
+  stopWarmup();
+  warmupBuffer = [];
+  startWarmup();
   document.getElementById('btnB').textContent = 'Set Point B';
   document.getElementById('btnB').className = 'point-btn btn-b';
   document.getElementById('btnB').disabled = true;
@@ -1982,6 +2005,9 @@ function dismissWelcome() {
   localStorage.setItem('disttrkr_welcomed', '1');
   document.getElementById('welcomeScreen').classList.add('hidden');
   // Start GPS warmup immediately so it's ready when they tap Set Point A
+  const btn = document.getElementById('btnA');
+  btn.className = 'point-btn btn-a-warmup';
+  btn.disabled = true;
   startWarmup();
   // Also trigger permission prompt
   if (navigator.geolocation) {
@@ -1993,6 +2019,9 @@ function checkWelcome() {
   if (localStorage.getItem('disttrkr_welcomed')) {
     document.getElementById('welcomeScreen').classList.add('hidden');
     // Returning user — start warmup immediately on page load
+    const btn = document.getElementById('btnA');
+    btn.className = 'point-btn btn-a-warmup';
+    btn.disabled = true;
     startWarmup();
   }
 }
