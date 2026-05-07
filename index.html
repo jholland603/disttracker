@@ -1489,7 +1489,7 @@ html, body {
 
       <div style="text-align:center; padding: 16px 0 8px; font-family:'DM Mono',monospace; font-size:9px; color:#666; letter-spacing:2px;">
         DIST TRKR · GPS · DISTANCE · TRACKER<br>
-        <span style="color:#777; font-size:11px; letter-spacing:1px;">v1.9.12</span>
+        <span style="color:#777; font-size:11px; letter-spacing:1px;">v1.9.13</span>
       </div>
 
     </div>
@@ -2700,9 +2700,9 @@ function selectCourse(name, greens, tees, holes) {
       label: t.tags.colour || t.tags.color || t.tags['golf:tee'] || t.tags.tee || null
     }));
 
-    // Deduplicate tees by approximate position (same tee mapped twice)
+    // Deduplicate tees by approximate position (same tee polygon mapped twice)
     const uniqueTees = teeCenters.filter((t, idx, arr) =>
-      arr.findIndex(u => Math.abs(u.lat - t.lat) < 0.0001 && Math.abs(u.lon - t.lon) < 0.0001) === idx
+      arr.findIndex(u => Math.abs(u.lat - t.lat) < 0.00003 && Math.abs(u.lon - t.lon) < 0.00003) === idx
     );
 
     const meta = holeMeta[ref] || {};
@@ -2780,12 +2780,20 @@ function updateGolfDistances() {
     }));
     teesWithDist.sort((a, b) => b.distToGreen - a.distToGreen);
 
-    teeItems.innerHTML = teesWithDist.map(t => {
+    teeItems.innerHTML = teesWithDist.map((t, idx) => {
+      const isBack    = idx === 0;
+      const isForward = idx === teesWithDist.length - 1 && teesWithDist.length > 1;
+      const holeYds   = toGolfUnit(t.distToGreen);
+      const label     = isBack ? `Back — ${holeYds} ${golfUnitLabel()}` :
+                        isForward ? 'Forward' :
+                        `${holeYds} ${golfUnitLabel()}`;
+      const textColor = isBack ? 'var(--text)' : isForward ? 'var(--accent)' : 'var(--dim)';
+      const borderColor = isBack ? 'rgba(255,255,255,0.2)' : isForward ? 'rgba(0,229,255,0.25)' : 'var(--border)';
       return `<div style="display:flex; justify-content:space-between; align-items:center;
-                padding:8px 12px; background:var(--panel); border:1px solid var(--border);
+                padding:8px 12px; background:var(--panel); border:1px solid ${borderColor};
                 border-radius:10px;">
-        <span style="font-family:var(--mono); font-size:11px; color:var(--dim); letter-spacing:1px;">${toGolfUnit(t.distToGreen)} ${golfUnitLabel()} hole</span>
-        <span style="font-family:var(--display); font-size:18px; font-weight:800; color:var(--dim);">
+        <span style="font-family:var(--mono); font-size:11px; color:${textColor}; letter-spacing:1px;">${label}</span>
+        <span style="font-family:var(--display); font-size:18px; font-weight:800; color:${textColor};">
           ${toGolfUnit(t.d)} <span style="font-family:var(--mono); font-size:10px;">${golfUnitLabel()}</span>
         </span>
       </div>`;
