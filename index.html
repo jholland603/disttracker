@@ -1201,23 +1201,11 @@ html, body {
         <div id="golfParLabel" style="font-family:var(--mono); font-size:11px; color:var(--dim); letter-spacing:2px; margin-bottom:4px;"></div>
       </div>
 
-      <!-- Front / Middle / Back cards -->
-      <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; padding:0 12px; flex-shrink:0;">
-        <div style="background:var(--panel); border:1px solid var(--border); border-radius:14px; padding:14px 10px; text-align:center;">
-          <div style="font-family:var(--mono); font-size:10px; color:var(--dim); letter-spacing:1px; margin-bottom:8px;">FRONT</div>
-          <div id="golfDistFront" style="font-family:var(--display); font-size:26px; font-weight:800; color:var(--text);">—</div>
-          <div id="golfUnitFront" style="font-family:var(--mono); font-size:10px; color:var(--dim); margin-top:2px;">YD</div>
-        </div>
-        <div style="background:var(--panel); border:1.5px solid rgba(57,255,20,0.3); border-radius:14px; padding:14px 10px; text-align:center;">
-          <div style="font-family:var(--mono); font-size:10px; color:var(--dim); letter-spacing:1px; margin-bottom:8px;">CENTER</div>
-          <div id="golfDistCenter" style="font-family:var(--display); font-size:26px; font-weight:800; color:var(--green);">—</div>
-          <div id="golfUnitCenter" style="font-family:var(--mono); font-size:10px; color:var(--dim); margin-top:2px;">YD</div>
-        </div>
-        <div style="background:var(--panel); border:1px solid var(--border); border-radius:14px; padding:14px 10px; text-align:center;">
-          <div style="font-family:var(--mono); font-size:10px; color:var(--dim); letter-spacing:1px; margin-bottom:8px;">BACK</div>
-          <div id="golfDistBack" style="font-family:var(--display); font-size:26px; font-weight:800; color:var(--text);">—</div>
-          <div id="golfUnitBack" style="font-family:var(--mono); font-size:10px; color:var(--dim); margin-top:2px;">YD</div>
-        </div>
+      <!-- Center distance hero -->
+      <div style="text-align:center; padding:16px 12px; flex-shrink:0;">
+        <div id="golfDistCenter" style="font-family:var(--display); font-size:72px; font-weight:800; color:var(--green); line-height:1;">—</div>
+        <div id="golfUnitCenter" style="font-family:var(--mono); font-size:13px; color:var(--dim); letter-spacing:2px; margin-top:4px;">YD</div>
+        <div style="font-family:var(--mono); font-size:10px; color:var(--dim); letter-spacing:1px; margin-top:6px;">TO CENTER OF GREEN</div>
       </div>
 
       <!-- GPS status -->
@@ -2454,9 +2442,10 @@ function selectCourse(name, greens) {
       num: ref,
       par: g.tags && g.tags['golf:par'] ? g.tags['golf:par'] : null,
       center: {lat: centerLat, lon: centerLon},
-      // Approximate front/back as ±5m offset along lat axis if no specific data
-      front:  {lat: centerLat - 0.00004, lon: centerLon},
-      back:   {lat: centerLat + 0.00004, lon: centerLon},
+      // Approximate front/back as ±13m offset (~14 yds) along lat axis
+      // giving ~28 yard front-to-back spread, typical for a golf green
+      front:  {lat: centerLat - 0.00012, lon: centerLon},
+      back:   {lat: centerLat + 0.00012, lon: centerLon},
     };
   });
 
@@ -2490,10 +2479,8 @@ function renderHole() {
 
 function updateGolfDistances() {
   if (!golfCurrentPos || golfHoles.length === 0) {
-    ['Front','Center','Back'].forEach(p => {
-      document.getElementById('golfDist'+p).textContent = '—';
-      document.getElementById('golfUnit'+p).textContent = golfUnitLabel();
-    });
+    document.getElementById('golfDistCenter').textContent = '—';
+    document.getElementById('golfUnitCenter').textContent = golfUnitLabel();
     document.getElementById('golfGpsStatus').textContent = 'Waiting for GPS…';
     return;
   }
@@ -2501,17 +2488,10 @@ function updateGolfDistances() {
   const hole = golfHoles[golfCurrentHole];
   const {lat, lon, acc} = golfCurrentPos;
 
-  const dFront  = golfHaversine(lat, lon, hole.front.lat,  hole.front.lon);
   const dCenter = golfHaversine(lat, lon, hole.center.lat, hole.center.lon);
-  const dBack   = golfHaversine(lat, lon, hole.back.lat,   hole.back.lon);
 
-  document.getElementById('golfDistFront').textContent  = toGolfUnit(dFront);
   document.getElementById('golfDistCenter').textContent = toGolfUnit(dCenter);
-  document.getElementById('golfDistBack').textContent   = toGolfUnit(dBack);
-
-  ['Front','Center','Back'].forEach(p => {
-    document.getElementById('golfUnit'+p).textContent = golfUnitLabel();
-  });
+  document.getElementById('golfUnitCenter').textContent = golfUnitLabel();
 
   document.getElementById('golfGpsStatus').textContent =
     '±' + Math.round(acc * (golfUnit === 'yd' ? 1.09361 : 1)) + ' ' + golfUnitLabel() + ' GPS accuracy';
