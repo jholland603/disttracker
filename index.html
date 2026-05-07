@@ -1592,7 +1592,7 @@ html, body {
 
       <div style="text-align:center; padding: 16px 0 8px; font-family:'DM Mono',monospace; font-size:9px; color:#666; letter-spacing:2px;">
         DIST TRKR · GPS · DISTANCE · TRACKER<br>
-        <span style="color:#777; font-size:11px; letter-spacing:1px;">v1.9.24</span>
+        <span style="color:#777; font-size:11px; letter-spacing:1px;">v1.9.25</span>
       </div>
 
     </div>
@@ -3455,7 +3455,7 @@ function setRouteStatus(msg, type) {
 
 function updateRouteDisplay() {
   const el = document.getElementById('routeDistNum');
-  const val = fmt(traceMeters);
+  const val = fmt(traceMeters, true);
   el.textContent = val;
   if (traceMeters === 0) {
     el.className = traceActive ? 'distance-number live' : 'distance-number zero';
