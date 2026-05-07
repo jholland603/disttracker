@@ -147,6 +147,11 @@ html, body {
   0%,100% { box-shadow: 0 0 0 0 rgba(0,229,255,0.5); opacity: 0.5; }
   50%     { box-shadow: 0 0 0 8px rgba(0,229,255,0); opacity: 0.8; }
 }
+@keyframes tab-pulse {
+  0%,100% { opacity: 0.6; text-shadow: 0 0 0px rgba(0,229,255,0); }
+  50%     { opacity: 1;   text-shadow: 0 0 8px rgba(0,229,255,0.8); }
+}
+.tab-pulse { animation: tab-pulse 1.2s ease-in-out infinite; color: var(--accent) !important; opacity: 1 !important; }
 
 /* ── HERO ── */
 .hero {
@@ -1168,7 +1173,7 @@ html, body {
         <button class="export-btn" onclick="clearLog()" style="color:var(--red); border-color:rgba(255,61,113,0.3);">Clear</button>
       </div>
     </div>
-    <div class="swipe-hint" style="padding: 6px 0 8px;">👈 Swipe LEFT to delete &nbsp;·&nbsp; Tap to view &nbsp;·&nbsp; Tap <strong>Measure</strong> tab to start a new measurement</div>
+    <div class="swipe-hint" style="padding: 6px 0 8px;">Tap to view &nbsp;·&nbsp; 👈 Swipe LEFT to delete</div>
     <div class="log-list" id="logList">
       <div class="log-empty" id="logEmpty">No measurements yet</div>
     </div>
@@ -1484,7 +1489,7 @@ html, body {
 
       <div style="text-align:center; padding: 16px 0 8px; font-family:'DM Mono',monospace; font-size:9px; color:#666; letter-spacing:2px;">
         DIST TRKR · GPS · DISTANCE · TRACKER<br>
-        <span style="color:#777; font-size:11px; letter-spacing:1px;">v1.9.8</span>
+        <span style="color:#777; font-size:11px; letter-spacing:1px;">v1.9.10</span>
       </div>
 
     </div>
@@ -1904,6 +1909,7 @@ function setPointB() {
       saveToStorage();
       addLogRow(entry);
       switchTab('log');
+      pulseMeasureTab();
 
       btn.textContent = 'Set Point B';
       btn.className = 'point-btn btn-b';
@@ -2233,6 +2239,17 @@ function switchTab(tab, silent) {
   if (tab === 'golf') startGolfGpsWatch();
   else stopGolfGpsWatch();
   if (!silent) localStorage.setItem('disttrkr_tab', tab);
+  if (tab === 'measure') clearMeasureTabPulse();
+}
+
+function pulseMeasureTab() {
+  document.getElementById('iconMeasure').classList.add('tab-pulse');
+  document.getElementById('labelMeasure').classList.add('tab-pulse');
+}
+
+function clearMeasureTabPulse() {
+  document.getElementById('iconMeasure').classList.remove('tab-pulse');
+  document.getElementById('labelMeasure').classList.remove('tab-pulse');
 }
 
 function showScreen(name) {
@@ -3010,6 +3027,7 @@ function routeStop() {
   saveToStorage();
   addLogRow(entry);
   switchTab('log');
+  pulseMeasureTab();
 
   tracePoints  = [];
   traceMeters  = 0;
