@@ -1262,7 +1262,7 @@ html, body {
       <!-- Start button (top) -->
       <div class="points-section" style="padding-bottom:8px;">
         <div class="point-card" id="routeCardA">
-          <button class="point-btn btn-a-warmup" id="routeBtnStart" onclick="routeStart()" disabled>Start</button>
+          <button class="point-btn btn-a-warmup" id="routeBtnStart" onclick="routeStart()">Start</button>
           <div class="point-info">
             <div class="point-label">Starting Point</div>
             <div class="point-coords" id="routeStartCoords">—</div>
@@ -1660,7 +1660,7 @@ html, body {
 
       <div style="text-align:center; padding: 16px 0 8px; font-family:'DM Mono',monospace; font-size:9px; color:#666; letter-spacing:2px;">
         DIST TRKR · GPS · DISTANCE · TRACKER<br>
-        <span style="color:#777; font-size:11px; letter-spacing:1px;">v1.9.29</span>
+        <span style="color:#777; font-size:11px; letter-spacing:1px;">v1.9.30</span>
       </div>
 
     </div>
@@ -1855,46 +1855,27 @@ function startWarmup() {
         if (!pointA && !acquiringPoint) {
           const profile = SPEED_PROFILES[currentSpeed];
           const good = warmupBuffer.filter(p => p.acc <= profile.maxAccuracy).length;
-          const btn      = document.getElementById('btnA');
-          const btnStart = document.getElementById('routeBtnStart');
+          const btn = document.getElementById('btnA');
 
           if (good >= profile.minSamples) {
-            // Warmup complete
-            if (measureMode === 'p2p') {
-              setStatus('GPS ready — tap Set Point A', 'ok');
-            }
+            if (measureMode === 'p2p') setStatus('GPS ready — tap Set Point A', 'ok');
             if (btn && btn.textContent !== 'Point A ✓') {
               btn.textContent = 'Set Point A ✓';
               btn.className = 'point-btn btn-a';
               btn.style.borderColor = '';
               btn.disabled = false;
             }
-            // Only update Start button if in route mode and route not yet started
-            if (btnStart && measureMode === 'route' && !traceActive &&
-                btnStart.className.includes('warmup')) {
-              btnStart.textContent = 'Start';
-              btnStart.className = 'point-btn btn-a';
-              btnStart.disabled = false;
-            }
           } else {
-            // Still warming up
-            if (measureMode === 'p2p') {
-              setStatus('GPS warming up… ' + good + '/' + profile.minSamples + ' samples', null);
-            }
+            if (measureMode === 'p2p') setStatus('GPS warming up… ' + good + '/' + profile.minSamples + ' samples', null);
             if (btn && btn.textContent !== 'Point A ✓') {
               btn.textContent = 'Set Point A (' + good + '/' + profile.minSamples + ')';
               btn.className = 'point-btn btn-a-warmup';
               btn.disabled = true;
             }
-            // Only update Start button if in route mode and route not yet started
-            if (btnStart && measureMode === 'route' && !traceActive &&
-                !btnStart.className.includes('btn-a-done')) {
-              btnStart.textContent = 'Start (' + good + '/' + profile.minSamples + ')';
-              btnStart.className = 'point-btn btn-a-warmup';
-              btnStart.disabled = true;
-            }
           }
         }
+        // Always sync route Start button independently
+        syncRouteStartButton();
       } else if (!pointA && !acquiringPoint && warmupBuffer.length === 0) {
         if (measureMode === 'p2p') setStatus('Waiting for GPS signal…', null);
       }
@@ -1908,6 +1889,27 @@ function stopWarmup() {
   if (warmupWatchId !== null) {
     navigator.geolocation.clearWatch(warmupWatchId);
     warmupWatchId = null;
+  }
+}
+
+// Sync the route Start button state based on warmup and trace state
+// Called from warmup callback and on init — completely independent of P2P state
+function syncRouteStartButton() {
+  if (traceActive) return; // route in progress — Start is locked, don't touch
+  const btn = document.getElementById('routeBtnStart');
+  if (!btn) return;
+  // Don't touch if it's already in done state
+  if (btn.className.includes('btn-a-done')) return;
+  const profile = SPEED_PROFILES[currentSpeed];
+  const good = warmupBuffer.filter(p => p.acc <= profile.maxAccuracy).length;
+  if (good >= profile.minSamples) {
+    btn.textContent = 'Start';
+    btn.className   = 'point-btn btn-a';
+    btn.disabled    = false;
+  } else {
+    btn.textContent = 'Start (' + good + '/' + profile.minSamples + ')';
+    btn.className   = 'point-btn btn-a-warmup';
+    btn.disabled    = true;
   }
 }
 
@@ -3573,27 +3575,16 @@ function resetRoute() {
 }
 
 function resetRouteButtons() {
-  const btnStart = document.getElementById('routeBtnStart');
   const btnStop  = document.getElementById('routeBtnStop');
   const btnPause = document.getElementById('routePauseBtn');
-  // Start goes back to warmup — GPS is already running so it will unlock quickly
-  btnStart.textContent = 'Start';
-  btnStart.className   = 'point-btn btn-a-warmup';
-  btnStart.disabled    = true;
   btnStop.textContent  = 'Stop & Save';
   btnStop.className    = 'point-btn btn-b';
   btnStop.disabled     = true;
   btnPause.disabled    = true;
   btnPause.textContent = '⏸ Pause';
   btnPause.style.color = 'var(--dim)';
-  // If warmup already has enough samples, unlock Start immediately
-  const profile = SPEED_PROFILES[currentSpeed];
-  const good = warmupBuffer.filter(p => p.acc <= profile.maxAccuracy).length;
-  if (good >= profile.minSamples) {
-    btnStart.textContent = 'Start';
-    btnStart.className   = 'point-btn btn-a';
-    btnStart.disabled    = false;
-  }
+  // Reset Start button based on current warmup state
+  syncRouteStartButton();
 }
 
 function setRouteStatus(msg, type) {
