@@ -1504,7 +1504,7 @@ html, body {
 
       <div style="text-align:center; padding: 16px 0 8px; font-family:'DM Mono',monospace; font-size:9px; color:#666; letter-spacing:2px;">
         DIST TRKR · GPS · DISTANCE · TRACKER<br>
-        <span style="color:#777; font-size:11px; letter-spacing:1px;">v1.9.17</span>
+        <span style="color:#777; font-size:11px; letter-spacing:1px;">v1.9.20</span>
       </div>
 
     </div>
@@ -1893,6 +1893,7 @@ function setPointA() {
       warmupBuffer = []; // now clear — start fresh for Point B
       startWarmup();     // start collecting for Point B immediately
       startLive();
+      saveP2PState();
     },
     err => {
       acquiringPoint = false;
@@ -1956,6 +1957,7 @@ function setPointB() {
 
       // restart live from same Point A
       startLive();
+      saveP2PState(); // Point A still set, live restarted
     },
     err => {
       btn.textContent = 'Set Point B';
@@ -1973,8 +1975,10 @@ function setPointB() {
 function resetAll() {
   stopLive();
   livePaused = false;
+  liveAutoPaused = false;
   acquiringPoint = false;
   pointA = null;
+  clearP2PState();
 
   const el = document.getElementById('distNum');
   el.textContent = '0'; el.className = 'distance-number zero';
@@ -2266,7 +2270,42 @@ function renameCurrent() {
 }
 
 // ── TABS ───────────────────────────────────────────────────
+
+// Tracks whether live P2P was auto-paused by a tab switch (vs manually by the user)
+let liveAutoPaused = false;
+
 function switchTab(tab, silent) {
+  const leavingMeasure = document.getElementById('screenMeasure').classList.contains('active');
+  const enteringMeasure = (tab === 'measure');
+
+  // ── Leaving Measure: pause live P2P if it's running ──
+  if (leavingMeasure && !enteringMeasure) {
+    if (liveWatchId !== null && !livePaused) {
+      // Live is actively running — auto-pause it
+      liveAutoPaused = true;
+      livePaused = true;
+      stopLive();
+      document.getElementById('livePill').classList.add('visible');
+      document.getElementById('livePill').classList.add('paused');
+      setStatus('Live paused — tap LIVE to resume', 'ok');
+      saveP2PState();
+    } else if (livePaused) {
+      // Already manually paused — just save state
+      saveP2PState();
+    }
+  }
+
+  // ── Entering Measure: resume live P2P if we auto-paused it ──
+  if (enteringMeasure && liveAutoPaused) {
+    liveAutoPaused = false;
+    livePaused = false;
+    document.getElementById('livePill').classList.remove('paused');
+    if (pointA) {
+      startLive();
+      setStatus('Updating live — tap Set Point B to lock', 'live');
+    }
+  }
+
   showScreen(tab === 'measure' ? 'measure' : tab === 'log' ? 'log' : tab === 'golf' ? 'golf' : 'help');
   ['measure','log','golf','help'].forEach(t => {
     const active = t === tab;
@@ -2277,6 +2316,58 @@ function switchTab(tab, silent) {
   else stopGolfGpsWatch();
   if (!silent) localStorage.setItem('disttrkr_tab', tab);
   if (tab === 'measure') clearMeasureTabPulse();
+}
+
+// ── P2P STATE PERSISTENCE ──────────────────────────────────
+function saveP2PState() {
+  if (!pointA) { localStorage.removeItem('disttrkr_p2p'); return; }
+  const state = {
+    pointA,
+    livePaused,
+    liveAutoPaused
+  };
+  localStorage.setItem('disttrkr_p2p', JSON.stringify(state));
+}
+
+function clearP2PState() {
+  localStorage.removeItem('disttrkr_p2p');
+}
+
+function restoreP2PState() {
+  const raw = localStorage.getItem('disttrkr_p2p');
+  if (!raw) return;
+  try {
+    const state = JSON.parse(raw);
+    if (!state.pointA) return;
+
+    pointA = state.pointA;
+    livePaused    = state.livePaused    || false;
+    liveAutoPaused = state.liveAutoPaused || false;
+
+    // Restore Point A UI
+    const btnA = document.getElementById('btnA');
+    btnA.textContent = 'Point A ✓';
+    btnA.className   = 'point-btn btn-a-done';
+    btnA.disabled    = false;
+    document.getElementById('aCoords').textContent = pointA.lat.toFixed(5) + ', ' + pointA.lon.toFixed(5);
+    document.getElementById('aCoords').className   = 'point-coords set-a';
+    document.getElementById('aAcc').textContent    = '±' + Math.round(pointA.acc * 3.28084) + ' ft';
+    document.getElementById('cardA').className     = 'point-card set-a';
+
+    document.getElementById('btnB').disabled = false;
+
+    // Resume live if it was running when we last left
+    if (!livePaused) {
+      startLive();
+      setStatus('Updating live — tap Set Point B to lock', 'live');
+    } else {
+      document.getElementById('livePill').classList.add('visible');
+      document.getElementById('livePill').classList.add('paused');
+      setStatus('Live paused — tap LIVE to resume', 'ok');
+    }
+  } catch(e) {
+    clearP2PState();
+  }
 }
 
 function pulseMeasureTab() {
@@ -3139,6 +3230,8 @@ function routeStart() {
   traceWatchId = navigator.geolocation.watchPosition(
     pos => {
       if (tracePaused) return;
+      // Skip poor accuracy readings (>40m) to avoid GPS drift logging false distance
+      if (pos.coords.accuracy > 40) return;
       const p = {lat: pos.coords.latitude, lon: pos.coords.longitude, alt: pos.coords.altitude, acc: pos.coords.accuracy};
 
       if (traceLastPos) {
@@ -3162,7 +3255,7 @@ function routeStart() {
         p.lat.toFixed(5) + ', ' + p.lon.toFixed(5);
     },
     () => {},
-    {enableHighAccuracy: true, maximumAge: 3000}
+    {enableHighAccuracy: true, maximumAge: 0}
   );
 }
 
@@ -3315,6 +3408,7 @@ function restoreTraceState() {
       traceWatchId = navigator.geolocation.watchPosition(
         pos => {
           if (tracePaused) return;
+          if (pos.coords.accuracy > 40) return;
           const p = {lat: pos.coords.latitude, lon: pos.coords.longitude, alt: pos.coords.altitude, acc: pos.coords.accuracy};
           if (traceLastPos) {
             const d = haversine(traceLastPos.lat, traceLastPos.lon, p.lat, p.lon);
@@ -3329,7 +3423,7 @@ function restoreTraceState() {
             p.lat.toFixed(5) + ', ' + p.lon.toFixed(5);
         },
         () => {},
-        {enableHighAccuracy: true, maximumAge: 3000}
+        {enableHighAccuracy: true, maximumAge: 0}
       );
     } else {
       traceActive = true;
@@ -3392,6 +3486,7 @@ function initTab() {
 loadFromStorage();
 initSpeed();
 initMeasureMode();
+restoreP2PState();
 checkWelcome();
 initTab();
 </script>
