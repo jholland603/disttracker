@@ -1127,7 +1127,7 @@ html, body {
   <!-- ══ GOLF SCREEN ══ -->
   <div class="screen" id="screenGolf">
     <div class="log-top-bar">
-      <div class="log-title">⛳ Golf GPS</div>
+      <div class="log-title"></div>
       <div style="display:flex; gap:8px; align-items:center;">
         <button id="golfUnitToggle" onclick="toggleGolfUnit()" style="
           font-family:var(--mono); font-size:11px; padding:5px 12px;
@@ -1139,7 +1139,6 @@ html, body {
 
     <!-- Course search state -->
     <div id="golfSearch" style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:24px; gap:16px;">
-      <div style="font-size:48px;">⛳</div>
       <div style="font-family:var(--display); font-size:22px; font-weight:800; color:var(--text); text-align:center;">Find Nearby Course</div>
       <div style="font-family:var(--sans); font-size:14px; color:var(--mid); text-align:center; max-width:280px; line-height:1.6;">Uses your current GPS position to find golf courses within 5km that have hole data mapped.</div>
       <button onclick="findNearbyCourses()" style="
@@ -1196,26 +1195,13 @@ html, body {
           -webkit-tap-highlight-color:transparent;">›</button>
       </div>
 
-      <!-- Par + distance hero -->
-      <div style="text-align:center; padding:0 16px 12px; flex-shrink:0;">
-        <div id="golfParLabel" style="font-family:var(--mono); font-size:11px; color:var(--dim); letter-spacing:2px; margin-bottom:4px;"></div>
-      </div>
-
       <!-- Center distance hero -->
-      <div style="text-align:center; padding:16px 12px; flex-shrink:0;">
-        <div id="golfDistCenter" style="font-family:var(--display); font-size:72px; font-weight:800; color:var(--green); line-height:1;">—</div>
-        <div id="golfUnitCenter" style="font-family:var(--mono); font-size:13px; color:var(--dim); letter-spacing:2px; margin-top:4px;">YD</div>
-        <div style="font-family:var(--mono); font-size:10px; color:var(--dim); letter-spacing:1px; margin-top:6px;">TO CENTER OF GREEN</div>
-      </div>
-
-      <!-- GPS status -->
-      <div style="padding:12px 16px; flex-shrink:0;">
-        <div id="golfGpsStatus" style="font-family:var(--mono); font-size:11px; color:var(--dim); text-align:center; letter-spacing:1px;"></div>
-      </div>
-
-      <!-- Scroll area for all holes summary -->
-      <div style="flex:1; overflow-y:auto; padding:0 12px 12px;">
-        <div id="golfHolesList" style="display:flex; flex-direction:column; gap:6px;"></div>
+      <div style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:16px 12px;">
+        <div id="golfParLabel" style="font-family:var(--mono); font-size:11px; color:var(--dim); letter-spacing:2px; margin-bottom:16px;"></div>
+        <div id="golfDistCenter" style="font-family:var(--display); font-size:96px; font-weight:800; color:var(--green); line-height:1;">—</div>
+        <div id="golfUnitCenter" style="font-family:var(--mono); font-size:13px; color:var(--dim); letter-spacing:2px; margin-top:6px;">YD</div>
+        <div style="font-family:var(--mono); font-size:10px; color:var(--dim); letter-spacing:1px; margin-top:8px;">TO CENTER OF GREEN</div>
+        <div id="golfGpsStatus" style="font-family:var(--mono); font-size:11px; color:var(--dim); letter-spacing:1px; margin-top:12px;"></div>
       </div>
     </div>
   </div>
@@ -2461,7 +2447,6 @@ function selectCourse(name, greens) {
   hv.style.flexDirection = 'column';
 
   renderHole();
-  updateHolesList();
   startGolfGpsWatch();
 }
 
@@ -2497,44 +2482,12 @@ function updateGolfDistances() {
     '±' + Math.round(acc * (golfUnit === 'yd' ? 1.09361 : 1)) + ' ' + golfUnitLabel() + ' GPS accuracy';
 }
 
-function updateHolesList() {
-  const el = document.getElementById('golfHolesList');
-  el.innerHTML = '';
-  golfHoles.forEach((hole, i) => {
-    const isActive = i === golfCurrentHole;
-    const div = document.createElement('div');
-    div.style.cssText = `
-      display:flex; align-items:center; justify-content:space-between;
-      padding:10px 14px; border-radius:10px; cursor:pointer;
-      background:${isActive ? 'rgba(57,255,20,0.08)' : 'var(--panel)'};
-      border:1px solid ${isActive ? 'rgba(57,255,20,0.3)' : 'var(--border)'};
-      -webkit-tap-highlight-color:transparent;
-    `;
-
-    let distText = '—';
-    if (golfCurrentPos) {
-      const d = golfHaversine(golfCurrentPos.lat, golfCurrentPos.lon, hole.center.lat, hole.center.lon);
-      distText = toGolfUnit(d) + ' ' + golfUnitLabel();
-    }
-
-    div.innerHTML = `
-      <div>
-        <span style="font-family:var(--display); font-size:16px; font-weight:800; color:${isActive ? 'var(--green)' : 'var(--text)'};">Hole ${hole.num}</span>
-        ${hole.par ? '<span style="font-family:var(--mono); font-size:10px; color:var(--dim); margin-left:8px;">Par ' + hole.par + '</span>' : ''}
-      </div>
-      <div style="font-family:var(--mono); font-size:12px; color:var(--mid);">${distText}</div>
-    `;
-    div.onclick = () => { golfCurrentHole = i; renderHole(); updateHolesList(); };
-    el.appendChild(div);
-  });
-}
 
 function changeHole(dir) {
   const next = golfCurrentHole + dir;
   if (next < 0 || next >= golfHoles.length) return;
   golfCurrentHole = next;
   renderHole();
-  updateHolesList();
 }
 
 function resetGolfSearch() {
