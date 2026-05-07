@@ -1174,6 +1174,13 @@ html, body {
       </div>
     </div>
     <div class="swipe-hint" style="padding: 6px 0 8px;">Tap to view &nbsp;·&nbsp; 👈 Swipe LEFT to delete</div>
+    <div class="unit-row" id="logUnitRow" style="padding: 0 12px 10px; justify-content:center; flex-shrink:0;">
+      <button class="unit-chip" id="lChipYd" onclick="setUnit('yd')">YD</button>
+      <button class="unit-chip" id="lChipFt" onclick="setUnit('ft')">FT</button>
+      <button class="unit-chip" id="lChipMi" onclick="setUnit('mi')">MI</button>
+      <button class="unit-chip" id="lChipM"  onclick="setUnit('m')">M</button>
+      <button class="unit-chip" id="lChipKm" onclick="setUnit('km')">KM</button>
+    </div>
     <div class="log-list" id="logList">
       <div class="log-empty" id="logEmpty">No measurements yet</div>
     </div>
@@ -1584,10 +1591,15 @@ function initSpeed() {
   const btn = document.getElementById('speedToggleBtn');
   btn.textContent = SPEED_LABELS[currentSpeed];
   btn.className = 'speed-toggle-btn speed-' + currentSpeed;
-  // Apply saved unit chip
+  // Apply saved unit chip to all three chip sets
   ['yd','ft','mi','m','km'].forEach(x => {
-    const el = document.getElementById('chip' + x.charAt(0).toUpperCase() + x.slice(1));
-    if (el) el.classList.toggle('active', x === unit);
+    const cap = x.charAt(0).toUpperCase() + x.slice(1);
+    const p2p   = document.getElementById('chip'  + cap);
+    const route = document.getElementById('rChip' + cap);
+    const log   = document.getElementById('lChip' + cap);
+    if (p2p)   p2p.classList.toggle('active',   x === unit);
+    if (route) route.classList.toggle('active',  x === unit);
+    if (log)   log.classList.toggle('active',    x === unit);
   });
 }
 
@@ -1617,14 +1629,31 @@ function haversine(la1, lo1, la2, lo2) {
 // ── UNIT TOGGLE ────────────────────────────────────────────
 function setUnit(u) {
   unit = u;
+  // Sync all three sets of unit chips: P2P, Route, Log
   ['yd','ft','mi','m','km'].forEach(x => {
-    const el = document.getElementById('chip' + x.charAt(0).toUpperCase() + x.slice(1));
-    if (el) el.classList.toggle('active', x === u);
+    const cap = x.charAt(0).toUpperCase() + x.slice(1);
+    const p2p   = document.getElementById('chip'  + cap);
+    const route = document.getElementById('rChip' + cap);
+    const log   = document.getElementById('lChip' + cap);
+    if (p2p)   p2p.classList.toggle('active',   x === u);
+    if (route) route.classList.toggle('active',  x === u);
+    if (log)   log.classList.toggle('active',    x === u);
   });
   localStorage.setItem('disttrkr_unit', u);
+  // Update Measure hero display
   if (measurements.length > 0) {
     const last = measurements[measurements.length-1].meters;
     setDistDisplay(last, liveWatchId !== null);
+  }
+  // Rebuild log list so all distances re-render in new unit
+  rebuildLog();
+  // If detail screen is open, refresh its hero distance + unit label
+  if (document.getElementById('screenDetail').classList.contains('active') && currentDetailId !== null) {
+    const m = measurements.find(x => x.id === currentDetailId);
+    if (m) {
+      document.getElementById('detailDist').textContent = fmt(m.meters);
+      document.getElementById('detailUnit').textContent = unitLabels[unit];
+    }
   }
 }
 
@@ -3059,8 +3088,10 @@ function initMeasureMode() {
 // Keep route unit chips in sync with main unit
 function syncRouteUnitChips() {
   ['Yd','Ft','Mi','M','Km'].forEach(u => {
-    const chip = document.getElementById('rChip' + u);
-    if (chip) chip.className = 'unit-chip' + (unit === u.toLowerCase() ? ' active' : '');
+    const rChip = document.getElementById('rChip' + u);
+    if (rChip) rChip.className = 'unit-chip' + (unit === u.toLowerCase() ? ' active' : '');
+    const lChip = document.getElementById('lChip' + u);
+    if (lChip) lChip.className = 'unit-chip' + (unit === u.toLowerCase() ? ' active' : '');
   });
 }
 
