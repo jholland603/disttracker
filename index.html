@@ -1592,7 +1592,7 @@ html, body {
 
       <div style="text-align:center; padding: 16px 0 8px; font-family:'DM Mono',monospace; font-size:9px; color:#666; letter-spacing:2px;">
         DIST TRKR · GPS · DISTANCE · TRACKER<br>
-        <span style="color:#777; font-size:11px; letter-spacing:1px;">v1.9.22</span>
+        <span style="color:#777; font-size:11px; letter-spacing:1px;">v1.9.24</span>
       </div>
 
     </div>
@@ -1619,6 +1619,7 @@ let unit        = 'yd';
 let measurements = [];
 let measureCount = 0;
 let liveWatchId  = null;
+let gpsReady     = false; // set true after welcome dismissed or returning user
 let currentDetailId = null;
 let prevTab     = 'measure';
 let touchStartX = 0;
@@ -1766,6 +1767,7 @@ function getWarmupMaxAcc() {
 }
 
 function startWarmup() {
+  if (!gpsReady) return;
   if (!navigator.geolocation) return;
   if (warmupWatchId !== null) return; // already running
   setStatus('GPS warming up…', null);
@@ -2422,6 +2424,7 @@ function clearP2PState() {
 }
 
 function restoreP2PState() {
+  if (!gpsReady) return;
   const raw = localStorage.getItem('disttrkr_p2p');
   if (!raw) return;
   try {
@@ -2539,6 +2542,7 @@ if (!navigator.geolocation) {
 function dismissWelcome() {
   localStorage.setItem('disttrkr_welcomed', '1');
   document.getElementById('welcomeScreen').classList.add('hidden');
+  gpsReady = true;
   // Start GPS warmup immediately so it's ready when they tap Set Point A
   const btn = document.getElementById('btnA');
   btn.className = 'point-btn btn-a-warmup';
@@ -2553,11 +2557,17 @@ function dismissWelcome() {
 function checkWelcome() {
   if (localStorage.getItem('disttrkr_welcomed')) {
     document.getElementById('welcomeScreen').classList.add('hidden');
-    // Returning user — start warmup immediately on page load
-    const btn = document.getElementById('btnA');
-    btn.className = 'point-btn btn-a-warmup';
-    btn.disabled = true;
-    startWarmup();
+    gpsReady = true;
+    // Returning user — run GPS restores that were blocked during init
+    restoreP2PState();
+    restoreTraceState();
+    // Start warmup if neither P2P nor route already restored a watch
+    if (!warmupWatchId && !liveWatchId && !traceWatchId) {
+      const btn = document.getElementById('btnA');
+      btn.className = 'point-btn btn-a-warmup';
+      btn.disabled = true;
+      startWarmup();
+    }
   }
 }
 
@@ -3332,10 +3342,11 @@ function routeStart() {
         if (d < TRACE_MIN_DIST) return;
         traceMeters += d;
       } else {
-        // First point — show start coords
+        // First point — show start coords and switch to live status
         document.getElementById('routeStartCoords').textContent =
           p.lat.toFixed(5) + ', ' + p.lon.toFixed(5);
         document.getElementById('routeStartAcc').textContent = '±' + Math.round(p.acc * 3.28084) + ' ft';
+        setRouteStatus('Tracing — tap Stop & Save when done', 'live');
       }
 
       tracePoints.push(p);
@@ -3399,7 +3410,7 @@ function routePause() {
   const btn = document.getElementById('routePauseBtn');
   btn.textContent = tracePaused ? '▶ Resume' : '⏸ Pause';
   btn.style.color = tracePaused ? 'var(--accent)' : 'var(--dim)';
-  setRouteStatus(tracePaused ? 'Paused — tap Resume to continue' : 'Tracing…', null);
+  setRouteStatus(tracePaused ? 'Paused — tap Resume to continue' : 'Tracing — tap Stop & Save when done', tracePaused ? null : 'live');
   saveTraceState();
 }
 
@@ -3439,6 +3450,7 @@ function resetRouteButtons() {
 function setRouteStatus(msg, type) {
   const el = document.getElementById('routeStatus');
   el.textContent = msg;
+  el.className = 'hero-status' + (type === 'live' ? ' live-state' : type === 'ok' ? ' ok-state' : type === 'error' ? ' error-state' : '');
 }
 
 function updateRouteDisplay() {
@@ -3467,6 +3479,7 @@ function clearTraceState() {
 }
 
 function restoreTraceState() {
+  if (!gpsReady) return;
   const raw = localStorage.getItem('disttrkr_trace');
   if (!raw) return;
   try {
@@ -3497,7 +3510,7 @@ function restoreTraceState() {
       traceLastPos.lat.toFixed(5) + ', ' + traceLastPos.lon.toFixed(5);
 
     updateRouteDisplay();
-    setRouteStatus(tracePaused ? 'Paused — tap Resume to continue' : 'Route restored — still tracing…', null);
+    setRouteStatus(tracePaused ? 'Paused — tap Resume to continue' : 'Tracing — tap Stop & Save when done', tracePaused ? null : 'live');
 
     // Resume watch if not paused
     if (!tracePaused) {
@@ -3583,7 +3596,6 @@ function initTab() {
 loadFromStorage();
 initSpeed();
 initMeasureMode();
-restoreP2PState();
 checkWelcome();
 initTab();
 </script>
