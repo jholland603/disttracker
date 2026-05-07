@@ -1660,7 +1660,7 @@ html, body {
 
       <div style="text-align:center; padding: 16px 0 8px; font-family:'DM Mono',monospace; font-size:9px; color:#666; letter-spacing:2px;">
         DIST TRKR · GPS · DISTANCE · TRACKER<br>
-        <span style="color:#777; font-size:11px; letter-spacing:1px;">v1.9.28</span>
+        <span style="color:#777; font-size:11px; letter-spacing:1px;">v1.9.29</span>
       </div>
 
     </div>
@@ -1857,29 +1857,38 @@ function startWarmup() {
           const good = warmupBuffer.filter(p => p.acc <= profile.maxAccuracy).length;
           const btn      = document.getElementById('btnA');
           const btnStart = document.getElementById('routeBtnStart');
+
           if (good >= profile.minSamples) {
-            // Warmup complete — enable buttons, stop pulsing
-            setStatus('GPS ready — tap Set Point A', 'ok');
+            // Warmup complete
+            if (measureMode === 'p2p') {
+              setStatus('GPS ready — tap Set Point A', 'ok');
+            }
             if (btn && btn.textContent !== 'Point A ✓') {
               btn.textContent = 'Set Point A ✓';
               btn.className = 'point-btn btn-a';
               btn.style.borderColor = '';
               btn.disabled = false;
             }
-            if (btnStart && !traceActive) {
+            // Only update Start button if in route mode and route not yet started
+            if (btnStart && measureMode === 'route' && !traceActive &&
+                btnStart.className.includes('warmup')) {
               btnStart.textContent = 'Start';
               btnStart.className = 'point-btn btn-a';
               btnStart.disabled = false;
             }
           } else {
-            // Still warming up — disable buttons, pulse glow
-            setStatus('GPS warming up… ' + good + '/' + profile.minSamples + ' samples', null);
+            // Still warming up
+            if (measureMode === 'p2p') {
+              setStatus('GPS warming up… ' + good + '/' + profile.minSamples + ' samples', null);
+            }
             if (btn && btn.textContent !== 'Point A ✓') {
               btn.textContent = 'Set Point A (' + good + '/' + profile.minSamples + ')';
               btn.className = 'point-btn btn-a-warmup';
               btn.disabled = true;
             }
-            if (btnStart && !traceActive) {
+            // Only update Start button if in route mode and route not yet started
+            if (btnStart && measureMode === 'route' && !traceActive &&
+                !btnStart.className.includes('btn-a-done')) {
               btnStart.textContent = 'Start (' + good + '/' + profile.minSamples + ')';
               btnStart.className = 'point-btn btn-a-warmup';
               btnStart.disabled = true;
@@ -1887,7 +1896,7 @@ function startWarmup() {
           }
         }
       } else if (!pointA && !acquiringPoint && warmupBuffer.length === 0) {
-        setStatus('Waiting for GPS signal…', null);
+        if (measureMode === 'p2p') setStatus('Waiting for GPS signal…', null);
       }
     },
     () => {},
