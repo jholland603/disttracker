@@ -1262,7 +1262,7 @@ html, body {
       <!-- Start button (top) -->
       <div class="points-section" style="padding-bottom:8px;">
         <div class="point-card" id="routeCardA">
-          <button class="point-btn btn-a" id="routeBtnStart" onclick="routeStart()">Start</button>
+          <button class="point-btn btn-a-warmup" id="routeBtnStart" onclick="routeStart()" disabled>Start</button>
           <div class="point-info">
             <div class="point-label">Starting Point</div>
             <div class="point-coords" id="routeStartCoords">—</div>
@@ -1660,7 +1660,7 @@ html, body {
 
       <div style="text-align:center; padding: 16px 0 8px; font-family:'DM Mono',monospace; font-size:9px; color:#666; letter-spacing:2px;">
         DIST TRKR · GPS · DISTANCE · TRACKER<br>
-        <span style="color:#777; font-size:11px; letter-spacing:1px;">v1.9.26</span>
+        <span style="color:#777; font-size:11px; letter-spacing:1px;">v1.9.28</span>
       </div>
 
     </div>
@@ -1855,9 +1855,10 @@ function startWarmup() {
         if (!pointA && !acquiringPoint) {
           const profile = SPEED_PROFILES[currentSpeed];
           const good = warmupBuffer.filter(p => p.acc <= profile.maxAccuracy).length;
-          const btn = document.getElementById('btnA');
+          const btn      = document.getElementById('btnA');
+          const btnStart = document.getElementById('routeBtnStart');
           if (good >= profile.minSamples) {
-            // Warmup complete — enable button, stop pulsing
+            // Warmup complete — enable buttons, stop pulsing
             setStatus('GPS ready — tap Set Point A', 'ok');
             if (btn && btn.textContent !== 'Point A ✓') {
               btn.textContent = 'Set Point A ✓';
@@ -1865,13 +1866,23 @@ function startWarmup() {
               btn.style.borderColor = '';
               btn.disabled = false;
             }
+            if (btnStart && !traceActive) {
+              btnStart.textContent = 'Start';
+              btnStart.className = 'point-btn btn-a';
+              btnStart.disabled = false;
+            }
           } else {
-            // Still warming up — disable button, pulse glow
+            // Still warming up — disable buttons, pulse glow
             setStatus('GPS warming up… ' + good + '/' + profile.minSamples + ' samples', null);
             if (btn && btn.textContent !== 'Point A ✓') {
               btn.textContent = 'Set Point A (' + good + '/' + profile.minSamples + ')';
               btn.className = 'point-btn btn-a-warmup';
               btn.disabled = true;
+            }
+            if (btnStart && !traceActive) {
+              btnStart.textContent = 'Start (' + good + '/' + profile.minSamples + ')';
+              btnStart.className = 'point-btn btn-a-warmup';
+              btnStart.disabled = true;
             }
           }
         }
@@ -2104,14 +2115,13 @@ function setPointB() {
       measurements.push(entry);
       saveToStorage();
       addLogRow(entry);
-      switchTab('log');
-      pulseMeasureTab();
 
       btn.textContent = 'Set Point B';
       btn.className = 'point-btn btn-b';
       btn.disabled = false;
       acquiringPoint = false;
-      setStatus(fmt(meters) + ' ' + unitLabels[unit].toLowerCase() + elevNote, 'ok');
+      setStatus('✓ Saved to Log — ' + fmt(meters) + ' ' + unitLabels[unit].toLowerCase() + elevNote, 'ok');
+      pulseLogTab();
 
       // restart live from same Point A
       startLive();
@@ -2473,7 +2483,6 @@ function switchTab(tab, silent) {
   if (tab === 'golf') startGolfGpsWatch();
   else stopGolfGpsWatch();
   if (!silent) localStorage.setItem('disttrkr_tab', tab);
-  if (tab === 'measure') clearMeasureTabPulse();
 }
 
 // ── P2P STATE PERSISTENCE ──────────────────────────────────
@@ -2529,14 +2538,15 @@ function restoreP2PState() {
   }
 }
 
-function pulseMeasureTab() {
-  document.getElementById('iconMeasure').classList.add('tab-pulse');
-  document.getElementById('labelMeasure').classList.add('tab-pulse');
+function pulseLogTab() {
+  document.getElementById('iconLog').classList.add('tab-pulse');
+  document.getElementById('labelLog').classList.add('tab-pulse');
+  setTimeout(clearLogTabPulse, 3000);
 }
 
-function clearMeasureTabPulse() {
-  document.getElementById('iconMeasure').classList.remove('tab-pulse');
-  document.getElementById('labelMeasure').classList.remove('tab-pulse');
+function clearLogTabPulse() {
+  document.getElementById('iconLog').classList.remove('tab-pulse');
+  document.getElementById('labelLog').classList.remove('tab-pulse');
 }
 
 function showScreen(name) {
@@ -3413,6 +3423,7 @@ function routeStart() {
   btnStart.className   = 'point-btn btn-a-done';
   btnStart.disabled    = true;
   btnStop.disabled     = false;
+  btnStop.className    = 'point-btn btn-b';
   btnPause.disabled    = false;
 
   // Light up green at 0 immediately, like P2P does
@@ -3458,6 +3469,8 @@ function routeStart() {
 }
 
 function routeStop() {
+  const btnStop = document.getElementById('routeBtnStop');
+
   if (traceWatchId !== null) {
     navigator.geolocation.clearWatch(traceWatchId);
     traceWatchId = null;
@@ -3466,11 +3479,19 @@ function routeStop() {
   traceActive  = false;
   tracePaused  = false;
 
+  // Flash loading state briefly
+  btnStop.className = 'point-btn btn-b-loading';
+  btnStop.textContent = 'Saving…';
+  btnStop.disabled = true;
+
   document.getElementById('keepAwakePrompt').classList.remove('visible');
   resetRouteButtons();
   clearTraceState();
 
   if (tracePoints.length < 2) {
+    btnStop.className   = 'point-btn btn-b';
+    btnStop.textContent = 'Stop & Save';
+    btnStop.disabled    = false;
     setRouteStatus('Need at least 2 points to save.', null);
     return;
   }
@@ -3486,18 +3507,29 @@ function routeStop() {
   measurements.push(entry);
   saveToStorage();
   addLogRow(entry);
-  switchTab('log');
-  pulseMeasureTab();
 
-  tracePoints  = [];
-  traceMeters  = 0;
-  traceLastPos = null;
-  setRouteStatus('Tap Start to begin tracing', null);
-  document.getElementById('routeDistNum').textContent = '0';
-  document.getElementById('routeDistNum').className = 'distance-number zero';
-  document.getElementById('routeStartCoords').textContent = '—';
-  document.getElementById('routeStopCoords').textContent = 'Walk, then tap to save';
-  document.getElementById('routePointCount').textContent = '';
+  // Show saved state on Stop & Save button briefly
+  btnStop.className   = 'point-btn btn-b-done';
+  btnStop.textContent = 'Stop & Save ✓';
+  document.getElementById('routeCardB').className = 'point-card set-b';
+
+  setRouteStatus('✓ Saved to Log — ' + fmt(traceMeters) + ' ' + unitLabels[unit].toLowerCase(), 'ok');
+  pulseLogTab();
+
+  // Reset display after 1.5 seconds
+  setTimeout(() => {
+    tracePoints  = [];
+    traceMeters  = 0;
+    traceLastPos = null;
+    resetRouteButtons();
+    setRouteStatus('Tap Start to begin tracing', null);
+    document.getElementById('routeDistNum').textContent = '0';
+    document.getElementById('routeDistNum').className = 'distance-number zero';
+    document.getElementById('routeStartCoords').textContent = '—';
+    document.getElementById('routeStopCoords').textContent = 'Walk, then tap to save';
+    document.getElementById('routePointCount').textContent = '';
+    document.getElementById('routeCardB').className = 'point-card';
+  }, 1500);
 }
 
 function routePause() {
@@ -3522,6 +3554,7 @@ function resetRoute() {
   traceLastPos = null;
   clearTraceState();
   resetRouteButtons();
+  document.getElementById('routeCardB').className = 'point-card';
   document.getElementById('routeDistNum').textContent = '0';
   document.getElementById('routeDistNum').className = 'distance-number zero';
   document.getElementById('routeStartCoords').textContent = '—';
@@ -3534,13 +3567,24 @@ function resetRouteButtons() {
   const btnStart = document.getElementById('routeBtnStart');
   const btnStop  = document.getElementById('routeBtnStop');
   const btnPause = document.getElementById('routePauseBtn');
+  // Start goes back to warmup — GPS is already running so it will unlock quickly
   btnStart.textContent = 'Start';
-  btnStart.className   = 'point-btn btn-a';
-  btnStart.disabled    = false;
+  btnStart.className   = 'point-btn btn-a-warmup';
+  btnStart.disabled    = true;
+  btnStop.textContent  = 'Stop & Save';
+  btnStop.className    = 'point-btn btn-b';
   btnStop.disabled     = true;
   btnPause.disabled    = true;
   btnPause.textContent = '⏸ Pause';
   btnPause.style.color = 'var(--dim)';
+  // If warmup already has enough samples, unlock Start immediately
+  const profile = SPEED_PROFILES[currentSpeed];
+  const good = warmupBuffer.filter(p => p.acc <= profile.maxAccuracy).length;
+  if (good >= profile.minSamples) {
+    btnStart.textContent = 'Start';
+    btnStart.className   = 'point-btn btn-a';
+    btnStart.disabled    = false;
+  }
 }
 
 function setRouteStatus(msg, type) {
