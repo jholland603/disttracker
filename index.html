@@ -1661,7 +1661,7 @@ html, body {
 
       <div style="text-align:center; padding: 16px 0 8px; font-family:'DM Mono',monospace; font-size:9px; color:#666; letter-spacing:2px;">
         DIST TRKR · GPS · DISTANCE · TRACKER<br>
-        <span style="color:#777; font-size:11px; letter-spacing:1px;">v1.9.32</span>
+        <span style="color:#777; font-size:11px; letter-spacing:1px;">v1.9.33</span>
       </div>
 
     </div>
@@ -3536,6 +3536,10 @@ function routeStop() {
     document.getElementById('routeStopCoords').textContent = 'Walk, then tap to save';
     document.getElementById('routePointCount').textContent = '';
     setRouteStatus('Tap Start to begin tracing', null);
+    // Restart warmup so Start button unlocks quickly
+    stopWarmup();
+    warmupBuffer = [];
+    startWarmup();
     resetRouteButtons();
   }, 1500);
 }
@@ -3561,7 +3565,6 @@ function resetRoute() {
   traceMeters  = 0;
   traceLastPos = null;
   clearTraceState();
-  resetRouteButtons();
   document.getElementById('routeCardB').className = 'point-card';
   document.getElementById('routeDistNum').textContent = '0';
   document.getElementById('routeDistNum').className = 'distance-number zero';
@@ -3569,6 +3572,10 @@ function resetRoute() {
   document.getElementById('routeStopCoords').textContent = 'Walk, then tap to save';
   document.getElementById('routePointCount').textContent = '';
   setRouteStatus('Tap Start to begin tracing', null);
+  stopWarmup();
+  warmupBuffer = [];
+  startWarmup();
+  resetRouteButtons();
 }
 
 function resetRouteButtons() {
