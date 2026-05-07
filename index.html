@@ -1489,7 +1489,7 @@ html, body {
 
       <div style="text-align:center; padding: 16px 0 8px; font-family:'DM Mono',monospace; font-size:9px; color:#666; letter-spacing:2px;">
         DIST TRKR · GPS · DISTANCE · TRACKER<br>
-        <span style="color:#777; font-size:11px; letter-spacing:1px;">v1.9.13</span>
+        <span style="color:#777; font-size:11px; letter-spacing:1px;">v1.9.14</span>
       </div>
 
     </div>
@@ -2637,7 +2637,7 @@ function showCourseList(courses, greens, tees, holes, userLat, userLon) {
   courses.forEach(course => {
     const tags = course.tags;
     const name = tags.name;
-    const holes = tags['golf:course'] ? tags['golf:course'].replace('_hole','') + ' holes' : '';
+    const holeCount = tags['golf:course'] ? tags['golf:course'].replace('_hole','') + ' holes' : '';
     const par = tags['golf:par'] ? 'Par ' + tags['golf:par'] : '';
 
     const div = document.createElement('div');
@@ -2648,7 +2648,7 @@ function showCourseList(courses, greens, tees, holes, userLat, userLon) {
     `;
     div.innerHTML = `
       <div style="font-family:var(--sans); font-size:15px; font-weight:600; color:var(--text); margin-bottom:4px;">${name}</div>
-      <div style="font-family:var(--mono); font-size:11px; color:var(--dim);">${[holes, par].filter(Boolean).join(' · ')}</div>
+      <div style="font-family:var(--mono); font-size:11px; color:var(--dim);">${[holeCount, par].filter(Boolean).join(' · ')}</div>
     `;
     div.onclick = () => selectCourse(name, greens, tees, holes);
     itemsEl.appendChild(div);
