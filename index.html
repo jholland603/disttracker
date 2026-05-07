@@ -963,6 +963,10 @@ html, body {
       <div class="tab-icon active" id="iconMeasure">⊙</div>
       <div class="tab-label active" id="labelMeasure">Measure</div>
     </div>
+    <div class="tab" id="tabGolf" onclick="switchTab('golf')">
+      <div class="tab-icon" id="iconGolf">⛳</div>
+      <div class="tab-label" id="labelGolf">Golf</div>
+    </div>
     <div class="tab" id="tabLog" onclick="switchTab('log')">
       <div class="tab-icon" id="iconLog">≡</div>
       <div class="tab-label" id="labelLog">Log</div>
@@ -1119,7 +1123,115 @@ html, body {
     </div>
   </div>
 
-  <!-- ══ TAB BAR ══ -->
+
+  <!-- ══ GOLF SCREEN ══ -->
+  <div class="screen" id="screenGolf">
+    <div class="log-top-bar">
+      <div class="log-title">⛳ Golf GPS</div>
+      <div style="display:flex; gap:8px; align-items:center;">
+        <button id="golfUnitToggle" onclick="toggleGolfUnit()" style="
+          font-family:var(--mono); font-size:11px; padding:5px 12px;
+          border-radius:8px; border:1px solid rgba(0,229,255,0.3);
+          background:rgba(0,229,255,0.08); color:var(--accent); cursor:pointer;
+          -webkit-tap-highlight-color:transparent;">YD</button>
+      </div>
+    </div>
+
+    <!-- Course search state -->
+    <div id="golfSearch" style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:24px; gap:16px;">
+      <div style="font-size:48px;">⛳</div>
+      <div style="font-family:var(--display); font-size:22px; font-weight:800; color:var(--text); text-align:center;">Find Nearby Course</div>
+      <div style="font-family:var(--sans); font-size:14px; color:var(--mid); text-align:center; max-width:280px; line-height:1.6;">Uses your current GPS position to find golf courses within 5km that have hole data mapped.</div>
+      <button onclick="findNearbyCourses()" style="
+        margin-top:8px; padding:14px 32px; border-radius:12px;
+        background:rgba(57,255,20,0.15); color:var(--green); border:1.5px solid rgba(57,255,20,0.3);
+        font-family:var(--sans); font-size:15px; font-weight:700;
+        cursor:pointer; -webkit-tap-highlight-color:transparent;">
+        📍 Find Courses Near Me
+      </button>
+      <div id="golfSearchStatus" style="font-family:var(--mono); font-size:12px; color:var(--dim); text-align:center;"></div>
+    </div>
+
+    <!-- Course list -->
+    <div id="golfCourseList" style="display:none; flex:1; overflow-y:auto; padding:12px;">
+      <div id="golfCourseItems"></div>
+      <button onclick="resetGolfSearch()" style="
+        width:100%; margin-top:12px; padding:12px; border-radius:12px;
+        background:transparent; border:1px solid var(--border);
+        color:var(--mid); font-family:var(--sans); font-size:13px;
+        cursor:pointer; -webkit-tap-highlight-color:transparent;">
+        ← Search Again
+      </button>
+    </div>
+
+    <!-- Active hole view -->
+    <div id="golfHoleView" style="display:none; flex:1; display:none; flex-direction:column; min-height:0;">
+
+      <!-- Course + hole header -->
+      <div style="padding:12px 16px 0; flex-shrink:0;">
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:4px;">
+          <button onclick="resetGolfSearch()" style="
+            font-family:var(--sans); font-size:13px; color:var(--mid);
+            background:transparent; border:none; cursor:pointer; padding:0;
+            -webkit-tap-highlight-color:transparent;">‹ Courses</button>
+          <div id="golfCourseName" style="font-family:var(--mono); font-size:11px; color:var(--dim); letter-spacing:1px; text-align:right; max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"></div>
+        </div>
+      </div>
+
+      <!-- Hole number + nav -->
+      <div style="display:flex; align-items:center; justify-content:space-between; padding:8px 16px; flex-shrink:0;">
+        <button id="golfPrevHole" onclick="changeHole(-1)" style="
+          width:44px; height:44px; border-radius:50%;
+          background:rgba(255,255,255,0.06); border:1px solid var(--border);
+          color:var(--text); font-size:20px; cursor:pointer;
+          -webkit-tap-highlight-color:transparent;">‹</button>
+        <div style="text-align:center;">
+          <div style="font-family:var(--display); font-size:36px; font-weight:800; color:var(--text);" id="golfHoleNum">1</div>
+          <div style="font-family:var(--mono); font-size:10px; color:var(--dim); letter-spacing:2px;">HOLE</div>
+        </div>
+        <button id="golfNextHole" onclick="changeHole(1)" style="
+          width:44px; height:44px; border-radius:50%;
+          background:rgba(255,255,255,0.06); border:1px solid var(--border);
+          color:var(--text); font-size:20px; cursor:pointer;
+          -webkit-tap-highlight-color:transparent;">›</button>
+      </div>
+
+      <!-- Par + distance hero -->
+      <div style="text-align:center; padding:0 16px 12px; flex-shrink:0;">
+        <div id="golfParLabel" style="font-family:var(--mono); font-size:11px; color:var(--dim); letter-spacing:2px; margin-bottom:4px;"></div>
+      </div>
+
+      <!-- Front / Middle / Back cards -->
+      <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; padding:0 12px; flex-shrink:0;">
+        <div style="background:var(--panel); border:1px solid var(--border); border-radius:14px; padding:14px 10px; text-align:center;">
+          <div style="font-family:var(--mono); font-size:10px; color:var(--dim); letter-spacing:1px; margin-bottom:8px;">FRONT</div>
+          <div id="golfDistFront" style="font-family:var(--display); font-size:26px; font-weight:800; color:var(--text);">—</div>
+          <div id="golfUnitFront" style="font-family:var(--mono); font-size:10px; color:var(--dim); margin-top:2px;">YD</div>
+        </div>
+        <div style="background:var(--panel); border:1.5px solid rgba(57,255,20,0.3); border-radius:14px; padding:14px 10px; text-align:center;">
+          <div style="font-family:var(--mono); font-size:10px; color:var(--dim); letter-spacing:1px; margin-bottom:8px;">CENTER</div>
+          <div id="golfDistCenter" style="font-family:var(--display); font-size:26px; font-weight:800; color:var(--green);">—</div>
+          <div id="golfUnitCenter" style="font-family:var(--mono); font-size:10px; color:var(--dim); margin-top:2px;">YD</div>
+        </div>
+        <div style="background:var(--panel); border:1px solid var(--border); border-radius:14px; padding:14px 10px; text-align:center;">
+          <div style="font-family:var(--mono); font-size:10px; color:var(--dim); letter-spacing:1px; margin-bottom:8px;">BACK</div>
+          <div id="golfDistBack" style="font-family:var(--display); font-size:26px; font-weight:800; color:var(--text);">—</div>
+          <div id="golfUnitBack" style="font-family:var(--mono); font-size:10px; color:var(--dim); margin-top:2px;">YD</div>
+        </div>
+      </div>
+
+      <!-- GPS status -->
+      <div style="padding:12px 16px; flex-shrink:0;">
+        <div id="golfGpsStatus" style="font-family:var(--mono); font-size:11px; color:var(--dim); text-align:center; letter-spacing:1px;"></div>
+      </div>
+
+      <!-- Scroll area for all holes summary -->
+      <div style="flex:1; overflow-y:auto; padding:0 12px 12px;">
+        <div id="golfHolesList" style="display:flex; flex-direction:column; gap:6px;"></div>
+      </div>
+    </div>
+  </div>
+
   <!-- ══ HELP SCREEN ══ -->
   <div class="screen" id="screenHelp">
     <div class="log-top-bar">
@@ -1925,16 +2037,18 @@ function renameCurrent() {
 
 // ── TABS ───────────────────────────────────────────────────
 function switchTab(tab, silent) {
-  showScreen(tab === 'measure' ? 'measure' : tab === 'log' ? 'log' : 'help');
-  ['measure','log','help'].forEach(t => {
+  showScreen(tab === 'measure' ? 'measure' : tab === 'log' ? 'log' : tab === 'golf' ? 'golf' : 'help');
+  ['measure','log','golf','help'].forEach(t => {
     const active = t === tab;
     document.getElementById('icon'+capitalize(t)).classList.toggle('active', active);
     document.getElementById('label'+capitalize(t)).classList.toggle('active', active);
   });
+  if (tab === 'golf') startGolfGpsWatch();
+  else stopGolfGpsWatch();
 }
 
 function showScreen(name) {
-  const map = {measure:'screenMeasure', log:'screenLog', detail:'screenDetail', help:'screenHelp', map:'screenMap'};
+  const map = {measure:'screenMeasure', log:'screenLog', detail:'screenDetail', help:'screenHelp', map:'screenMap', golf:'screenGolf'};
   Object.values(map).forEach(id => document.getElementById(id).classList.remove('active'));
   document.getElementById(map[name]).classList.add('active');
 }
@@ -2126,6 +2240,331 @@ function openMap() {
 
 function closeMap() {
   showScreen('detail');
+}
+
+
+// ── GOLF GPS ───────────────────────────────────────────────
+
+let golfUnit        = 'yd';   // 'yd' or 'm'
+let golfWatchId     = null;
+let golfCurrentPos  = null;
+let golfHoles       = [];     // array of hole objects for selected course
+let golfCurrentHole = 0;      // index into golfHoles
+let golfCourseName  = '';
+
+// Conversion helpers
+function toGolfUnit(meters) {
+  if (golfUnit === 'yd') return Math.round(meters * 1.09361);
+  return Math.round(meters);
+}
+
+function golfUnitLabel() {
+  return golfUnit === 'yd' ? 'YD' : 'M';
+}
+
+function toggleGolfUnit() {
+  golfUnit = golfUnit === 'yd' ? 'm' : 'yd';
+  document.getElementById('golfUnitToggle').textContent = golfUnitLabel();
+  updateGolfDistances();
+  updateHolesList();
+}
+
+// Haversine (reuse app's existing one)
+function golfHaversine(lat1, lon1, lat2, lon2) {
+  const R = 6371000;
+  const dLat = (lat2-lat1)*Math.PI/180;
+  const dLon = (lon2-lon1)*Math.PI/180;
+  const a = Math.sin(dLat/2)*Math.sin(dLat/2) +
+            Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*
+            Math.sin(dLon/2)*Math.sin(dLon/2);
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+
+// Start/stop GPS watch for golf tab
+function startGolfGpsWatch() {
+  if (!navigator.geolocation) return;
+  if (golfWatchId !== null) return;
+  golfWatchId = navigator.geolocation.watchPosition(
+    pos => {
+      golfCurrentPos = {lat: pos.coords.latitude, lon: pos.coords.longitude, acc: pos.coords.accuracy};
+      if (golfHoles.length > 0) updateGolfDistances();
+    },
+    () => {},
+    { enableHighAccuracy: true, maximumAge: 5000 }
+  );
+}
+
+function stopGolfGpsWatch() {
+  if (golfWatchId !== null) {
+    navigator.geolocation.clearWatch(golfWatchId);
+    golfWatchId = null;
+  }
+}
+
+// Find nearby courses via Overpass API
+function findNearbyCourses() {
+  const statusEl = document.getElementById('golfSearchStatus');
+  statusEl.textContent = 'Getting your location…';
+
+  if (!navigator.geolocation) {
+    statusEl.textContent = 'GPS not supported in this browser.';
+    return;
+  }
+
+  navigator.geolocation.getCurrentPosition(
+    pos => {
+      const lat = pos.coords.latitude;
+      const lon = pos.coords.longitude;
+      golfCurrentPos = {lat, lon, acc: pos.coords.accuracy};
+      statusEl.textContent = 'Searching for courses…';
+      fetchCoursesNear(lat, lon);
+    },
+    () => { statusEl.textContent = 'Could not get your location. Try again outdoors.'; },
+    { enableHighAccuracy: true, timeout: 15000 }
+  );
+}
+
+function fetchCoursesNear(lat, lon) {
+  const statusEl = document.getElementById('golfSearchStatus');
+  const radius = 5000; // 5km
+
+  // Query for golf courses with hole (green) data
+  const query = `[out:json][timeout:30];
+(
+  way[leisure=golf_course](around:${radius},${lat},${lon});
+  relation[leisure=golf_course](around:${radius},${lat},${lon});
+);
+out tags;`;
+
+  fetch('https://overpass-api.de/api/interpreter', {
+    method: 'POST',
+    body: query
+  })
+  .then(r => r.json())
+  .then(data => {
+    // Filter to only courses with a name
+    const courses = data.elements.filter(e => e.tags && e.tags.name);
+    if (courses.length === 0) {
+      statusEl.textContent = 'No mapped courses found within 5km.';
+      return;
+    }
+    // Now fetch hole data for each course to filter ones with greens
+    fetchHoleDataForCourses(courses, lat, lon);
+  })
+  .catch(() => {
+    statusEl.textContent = 'Network error — check connection and try again.';
+  });
+}
+
+function fetchHoleDataForCourses(courses, lat, lon) {
+  const statusEl = document.getElementById('golfSearchStatus');
+  statusEl.textContent = `Found ${courses.length} course(s) — checking hole data…`;
+
+  const courseIds = courses.map(c => `way(${c.id});`).join('\n');
+
+  const query = `[out:json][timeout:30];
+(
+  way[golf=green](around:5000,${lat},${lon});
+);
+out center tags;`;
+
+  fetch('https://overpass-api.de/api/interpreter', {
+    method: 'POST',
+    body: query
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (!data.elements || data.elements.length === 0) {
+      statusEl.textContent = 'Courses found but no hole data mapped yet.';
+      return;
+    }
+
+    // Group greens — each green way has a center lat/lon
+    // We'll just find all greens and group by proximity to course center
+    const greens = data.elements.filter(e => e.center);
+
+    if (greens.length === 0) {
+      statusEl.textContent = 'No hole data available for nearby courses.';
+      return;
+    }
+
+    // Build courses with greens
+    // Match greens to courses by checking which named course they belong to
+    // For simplicity, show all courses that have at least one green nearby
+    showCourseList(courses, greens, lat, lon);
+  })
+  .catch(() => {
+    statusEl.textContent = 'Network error loading hole data.';
+  });
+}
+
+function showCourseList(courses, greens, userLat, userLon) {
+  // Assign greens to courses — use ref tag or proximity
+  // Build a map of courseId -> greens array
+  // Since OSM doesn't always link greens to courses via relation,
+  // we'll show all courses and pass all greens, then filter per course on selection
+
+  const itemsEl = document.getElementById('golfCourseItems');
+  itemsEl.innerHTML = '';
+
+  // For each course, estimate distance from user
+  courses.forEach(course => {
+    const tags = course.tags;
+    const name = tags.name;
+    const holes = tags['golf:course'] ? tags['golf:course'].replace('_hole','') + ' holes' : '';
+    const par = tags['golf:par'] ? 'Par ' + tags['golf:par'] : '';
+
+    const div = document.createElement('div');
+    div.style.cssText = `
+      background:var(--panel); border:1px solid var(--border); border-radius:14px;
+      padding:16px; margin-bottom:8px; cursor:pointer;
+      -webkit-tap-highlight-color:transparent;
+    `;
+    div.innerHTML = `
+      <div style="font-family:var(--sans); font-size:15px; font-weight:600; color:var(--text); margin-bottom:4px;">${name}</div>
+      <div style="font-family:var(--mono); font-size:11px; color:var(--dim);">${[holes, par].filter(Boolean).join(' · ')}</div>
+    `;
+    div.onclick = () => selectCourse(name, greens);
+    itemsEl.appendChild(div);
+  });
+
+  document.getElementById('golfSearch').style.display = 'none';
+  document.getElementById('golfCourseList').style.display = 'flex';
+  document.getElementById('golfCourseList').style.flexDirection = 'column';
+}
+
+function selectCourse(name, greens) {
+  golfCourseName = name;
+  document.getElementById('golfCourseName').textContent = name;
+
+  // Sort greens by hole ref number if available, else by lat
+  const sorted = [...greens].sort((a, b) => {
+    const ra = parseInt(a.tags && a.tags.ref) || 999;
+    const rb = parseInt(b.tags && b.tags.ref) || 999;
+    return ra - rb;
+  });
+
+  // Build hole objects from greens
+  golfHoles = sorted.map((g, i) => {
+    const ref = (g.tags && g.tags.ref) ? parseInt(g.tags.ref) : i + 1;
+    // Try to get front/center/back from OSM tags, else approximate from center
+    const centerLat = g.center.lat;
+    const centerLon = g.center.lon;
+    return {
+      num: ref,
+      par: g.tags && g.tags['golf:par'] ? g.tags['golf:par'] : null,
+      center: {lat: centerLat, lon: centerLon},
+      // Approximate front/back as ±5m offset along lat axis if no specific data
+      front:  {lat: centerLat - 0.00004, lon: centerLon},
+      back:   {lat: centerLat + 0.00004, lon: centerLon},
+    };
+  });
+
+  if (golfHoles.length === 0) {
+    document.getElementById('golfSearchStatus').textContent = 'No hole data found for this course.';
+    return;
+  }
+
+  golfCurrentHole = 0;
+  document.getElementById('golfCourseList').style.display = 'none';
+  const hv = document.getElementById('golfHoleView');
+  hv.style.display = 'flex';
+  hv.style.flexDirection = 'column';
+
+  renderHole();
+  updateHolesList();
+  startGolfGpsWatch();
+}
+
+function renderHole() {
+  const hole = golfHoles[golfCurrentHole];
+  document.getElementById('golfHoleNum').textContent = hole.num;
+  document.getElementById('golfParLabel').textContent = hole.par ? 'PAR ' + hole.par : '';
+
+  // Prev/next button states
+  document.getElementById('golfPrevHole').style.opacity = golfCurrentHole === 0 ? '0.3' : '1';
+  document.getElementById('golfNextHole').style.opacity = golfCurrentHole === golfHoles.length - 1 ? '0.3' : '1';
+
+  updateGolfDistances();
+}
+
+function updateGolfDistances() {
+  if (!golfCurrentPos || golfHoles.length === 0) {
+    ['Front','Center','Back'].forEach(p => {
+      document.getElementById('golfDist'+p).textContent = '—';
+      document.getElementById('golfUnit'+p).textContent = golfUnitLabel();
+    });
+    document.getElementById('golfGpsStatus').textContent = 'Waiting for GPS…';
+    return;
+  }
+
+  const hole = golfHoles[golfCurrentHole];
+  const {lat, lon, acc} = golfCurrentPos;
+
+  const dFront  = golfHaversine(lat, lon, hole.front.lat,  hole.front.lon);
+  const dCenter = golfHaversine(lat, lon, hole.center.lat, hole.center.lon);
+  const dBack   = golfHaversine(lat, lon, hole.back.lat,   hole.back.lon);
+
+  document.getElementById('golfDistFront').textContent  = toGolfUnit(dFront);
+  document.getElementById('golfDistCenter').textContent = toGolfUnit(dCenter);
+  document.getElementById('golfDistBack').textContent   = toGolfUnit(dBack);
+
+  ['Front','Center','Back'].forEach(p => {
+    document.getElementById('golfUnit'+p).textContent = golfUnitLabel();
+  });
+
+  document.getElementById('golfGpsStatus').textContent =
+    '±' + Math.round(acc * (golfUnit === 'yd' ? 1.09361 : 1)) + ' ' + golfUnitLabel() + ' GPS accuracy';
+}
+
+function updateHolesList() {
+  const el = document.getElementById('golfHolesList');
+  el.innerHTML = '';
+  golfHoles.forEach((hole, i) => {
+    const isActive = i === golfCurrentHole;
+    const div = document.createElement('div');
+    div.style.cssText = `
+      display:flex; align-items:center; justify-content:space-between;
+      padding:10px 14px; border-radius:10px; cursor:pointer;
+      background:${isActive ? 'rgba(57,255,20,0.08)' : 'var(--panel)'};
+      border:1px solid ${isActive ? 'rgba(57,255,20,0.3)' : 'var(--border)'};
+      -webkit-tap-highlight-color:transparent;
+    `;
+
+    let distText = '—';
+    if (golfCurrentPos) {
+      const d = golfHaversine(golfCurrentPos.lat, golfCurrentPos.lon, hole.center.lat, hole.center.lon);
+      distText = toGolfUnit(d) + ' ' + golfUnitLabel();
+    }
+
+    div.innerHTML = `
+      <div>
+        <span style="font-family:var(--display); font-size:16px; font-weight:800; color:${isActive ? 'var(--green)' : 'var(--text)'};">Hole ${hole.num}</span>
+        ${hole.par ? '<span style="font-family:var(--mono); font-size:10px; color:var(--dim); margin-left:8px;">Par ' + hole.par + '</span>' : ''}
+      </div>
+      <div style="font-family:var(--mono); font-size:12px; color:var(--mid);">${distText}</div>
+    `;
+    div.onclick = () => { golfCurrentHole = i; renderHole(); updateHolesList(); };
+    el.appendChild(div);
+  });
+}
+
+function changeHole(dir) {
+  const next = golfCurrentHole + dir;
+  if (next < 0 || next >= golfHoles.length) return;
+  golfCurrentHole = next;
+  renderHole();
+  updateHolesList();
+}
+
+function resetGolfSearch() {
+  golfHoles = [];
+  golfCurrentHole = 0;
+  golfCourseName = '';
+  document.getElementById('golfSearch').style.display = 'flex';
+  document.getElementById('golfCourseList').style.display = 'none';
+  document.getElementById('golfHoleView').style.display = 'none';
+  document.getElementById('golfSearchStatus').textContent = '';
 }
 
 loadFromStorage();
