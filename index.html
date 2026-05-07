@@ -1661,7 +1661,7 @@ html, body {
 
       <div style="text-align:center; padding: 16px 0 8px; font-family:'DM Mono',monospace; font-size:9px; color:#666; letter-spacing:2px;">
         DIST TRKR · GPS · DISTANCE · TRACKER<br>
-        <span style="color:#777; font-size:11px; letter-spacing:1px;">v1.9.31</span>
+        <span style="color:#777; font-size:11px; letter-spacing:1px;">v1.9.32</span>
       </div>
 
     </div>
@@ -2033,13 +2033,10 @@ function setPointA() {
   stopLive();
   acquiringPoint = true;
 
-  // If re-tapping after Point A already set, stop the existing warmup,
-  // clear the buffer (was collecting for Point B), and restart fresh
+  // If re-tapping after Point A already set, just clear pointA —
+  // keep the warmup buffer intact since it's been collecting continuously
   if (pointA) {
     pointA = null;
-    stopWarmup();
-    warmupBuffer = [];
-    startWarmup();
   }
   // NOTE: do NOT clear warmupBuffer here — we want to use it!
 
@@ -3491,22 +3488,22 @@ function routeStop() {
   traceActive  = false;
   tracePaused  = false;
 
-  // Flash loading state briefly
-  btnStop.className = 'point-btn btn-b-loading';
-  btnStop.textContent = 'Saving…';
-  btnStop.disabled = true;
-
   document.getElementById('keepAwakePrompt').classList.remove('visible');
-  resetRouteButtons();
   clearTraceState();
 
   if (tracePoints.length < 2) {
+    // Not enough points — restore buttons and let them try again
     btnStop.className   = 'point-btn btn-b';
     btnStop.textContent = 'Stop & Save';
     btnStop.disabled    = false;
     setRouteStatus('Need at least 2 points to save.', null);
     return;
   }
+
+  // Flash saving state
+  btnStop.className   = 'point-btn btn-b-loading';
+  btnStop.textContent = 'Saving…';
+  btnStop.disabled    = true;
 
   // Save entry
   measureCount++;
@@ -3520,27 +3517,26 @@ function routeStop() {
   saveToStorage();
   addLogRow(entry);
 
-  // Show saved state on Stop & Save button briefly
+  // Show saved state briefly
   btnStop.className   = 'point-btn btn-b-done';
   btnStop.textContent = 'Stop & Save ✓';
   document.getElementById('routeCardB').className = 'point-card set-b';
-
   setRouteStatus('✓ Saved to Log — ' + fmt(traceMeters) + ' ' + unitLabels[unit].toLowerCase(), 'ok');
   pulseLogTab();
 
-  // Reset display after 1.5 seconds
+  // Reset everything after 1.5 seconds
   setTimeout(() => {
     tracePoints  = [];
     traceMeters  = 0;
     traceLastPos = null;
-    resetRouteButtons();
-    setRouteStatus('Tap Start to begin tracing', null);
+    document.getElementById('routeCardB').className = 'point-card';
     document.getElementById('routeDistNum').textContent = '0';
     document.getElementById('routeDistNum').className = 'distance-number zero';
     document.getElementById('routeStartCoords').textContent = '—';
     document.getElementById('routeStopCoords').textContent = 'Walk, then tap to save';
     document.getElementById('routePointCount').textContent = '';
-    document.getElementById('routeCardB').className = 'point-card';
+    setRouteStatus('Tap Start to begin tracing', null);
+    resetRouteButtons();
   }, 1500);
 }
 
