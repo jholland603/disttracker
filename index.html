@@ -1168,7 +1168,7 @@ html, body {
         <button class="export-btn" onclick="clearLog()" style="color:var(--red); border-color:rgba(255,61,113,0.3);">Clear</button>
       </div>
     </div>
-    <div class="swipe-hint" style="padding: 6px 0 8px;">👈 Swipe LEFT on a measurement to delete &nbsp;·&nbsp; Tap to view</div>
+    <div class="swipe-hint" style="padding: 6px 0 8px;">👈 Swipe LEFT to delete &nbsp;·&nbsp; Tap to view &nbsp;·&nbsp; Tap <strong>Measure</strong> tab to start a new measurement</div>
     <div class="log-list" id="logList">
       <div class="log-empty" id="logEmpty">No measurements yet</div>
     </div>
@@ -1327,32 +1327,122 @@ html, body {
     </div>
     <div class="help-scroll">
 
+      <!-- POINT TO POINT -->
       <div class="help-section">
-        <div class="help-section-title">📍 How to Use</div>
+        <div class="help-section-title">📍 Point to Point</div>
         <div class="help-item">
           <div class="help-step">1</div>
-          <div class="help-body"><strong>Stand at your starting point</strong> and tap <em>Set Point A</em>. Stay still while it collects a GPS fix. The display turns green when it's locked.</div>
+          <div class="help-body"><strong>Select Point to Point</strong> at the top of the Measure tab. The button pulses while GPS warms up — wait for it to stop before tapping.</div>
         </div>
         <div class="help-item">
           <div class="help-step">2</div>
-          <div class="help-body"><strong>Walk to your destination.</strong> The distance updates live as you move. The number shows how far you are from Point A right now.</div>
+          <div class="help-body"><strong>Stand at your starting point</strong> and tap <em>Set Point A</em>. Stay still while it collects a GPS fix. The display turns green when locked.</div>
         </div>
         <div class="help-item">
           <div class="help-step">3</div>
-          <div class="help-body"><strong>Tap Set Point B</strong> to lock in the final measurement. It collects another GPS fix and saves the result to your log.</div>
+          <div class="help-body"><strong>Walk to your destination.</strong> The distance updates live as you move — it shows how far you are from Point A right now.</div>
         </div>
         <div class="help-item">
           <div class="help-step">4</div>
-          <div class="help-body"><strong>Tap ↺ Reset</strong> to start a new measurement. Your log stays intact — only the points clear.</div>
+          <div class="help-body"><strong>Tap Set Point B</strong> to lock the final measurement. It's saved to your Log automatically.</div>
+        </div>
+        <div class="help-item">
+          <div class="help-step">5</div>
+          <div class="help-body"><strong>Tap ↺ Reset</strong> to start fresh. Your log stays intact — only the points clear.</div>
         </div>
       </div>
 
+      <!-- ROUTE TRACING -->
       <div class="help-section">
-        <div class="help-section-title">⚡ Lock Speed</div>
-        <div class="help-body" style="padding:0 0 10px;">Toggle between Fast, Medium, and Accurate when locking a point. Faster means fewer GPS samples. More accurate means it waits longer for a stronger, steadier signal.</div>
-        <div class="help-tip">🏌️ Golf yardages? Use Accurate — but please don't slow down play. Property lines and fence runs deserve Accurate too. Measuring your driveway? Medium works great. Checking how far it is to Grandma's house as the crow flies? Fast — she's been waiting long enough.</div>
+        <div class="help-section-title">🗺 Trace Route</div>
+        <div class="help-body" style="padding:0 0 10px;">Route mode records your GPS path as you walk and totals up the distance travelled — useful for walking trails, golf holes, property perimeters, or any non-straight-line distance.</div>
+        <div class="help-item">
+          <div class="help-step">1</div>
+          <div class="help-body"><strong>Select Route</strong> at the top of the Measure tab.</div>
+        </div>
+        <div class="help-item">
+          <div class="help-step">2</div>
+          <div class="help-body"><strong>Tap Start</strong> at your starting point. The app begins recording a GPS point every 5 meters you move.</div>
+        </div>
+        <div class="help-item">
+          <div class="help-step">3</div>
+          <div class="help-body"><strong>Walk your route.</strong> The distance display updates as points are recorded. The GPS point count updates in real time.</div>
+        </div>
+        <div class="help-item">
+          <div class="help-step">4</div>
+          <div class="help-body"><strong>Tap ⏸ Pause</strong> to temporarily stop recording — useful at intersections or rest stops. Tap again to resume.</div>
+        </div>
+        <div class="help-item">
+          <div class="help-step">5</div>
+          <div class="help-body"><strong>Tap Stop &amp; Save</strong> when done. The route is saved to your Log and you can view it on the map.</div>
+        </div>
+        <div class="help-tip">💡 Route data survives a page refresh — if your browser reloads mid-walk, your recorded points and distance are restored automatically.</div>
       </div>
 
+      <!-- GOLF GPS -->
+      <div class="help-section">
+        <div class="help-section-title">⛳ Golf GPS</div>
+        <div class="help-body" style="padding:0 0 10px;">The Golf tab finds nearby courses using OpenStreetMap data and shows your live distance to the center of each green.</div>
+        <div class="help-item">
+          <div class="help-step">1</div>
+          <div class="help-body"><strong>Tap Find Courses Near Me.</strong> The app uses your GPS to search for courses within 5km that have hole data mapped.</div>
+        </div>
+        <div class="help-item">
+          <div class="help-step">2</div>
+          <div class="help-body"><strong>Tap a course</strong> to load its holes. Only courses with green data mapped will appear.</div>
+        </div>
+        <div class="help-item">
+          <div class="help-step">3</div>
+          <div class="help-body"><strong>The large number</strong> shows your live distance to the center of the current green in yards or meters. It updates continuously as you walk.</div>
+        </div>
+        <div class="help-item">
+          <div class="help-step">4</div>
+          <div class="help-body"><strong>Use ‹ › arrows</strong> to navigate between holes. Navigation wraps — tapping ‹ on hole 1 goes to the last hole.</div>
+        </div>
+        <div class="help-item">
+          <div class="help-step">5</div>
+          <div class="help-body"><strong>Tee distances</strong> appear below the green yardage if the course has tee box locations mapped. They are color-coded when color data is available.</div>
+        </div>
+        <div class="help-tip">⚠️ Golf GPS accuracy depends on OpenStreetMap data quality. Green locations may vary by course. Always verify with on-course yardage markers for competitive play.</div>
+      </div>
+
+      <!-- LOG -->
+      <div class="help-section">
+        <div class="help-section-title">📋 Log</div>
+        <div class="help-body" style="padding:0 0 10px;">The Log tab stores all your saved measurements and routes. Each entry shows a <span style="font-family:var(--mono);font-size:10px;padding:1px 5px;border-radius:4px;background:rgba(0,229,255,0.1);color:var(--accent);border:1px solid rgba(0,229,255,0.2);">POINT TO POINT</span> or <span style="font-family:var(--mono);font-size:10px;padding:1px 5px;border-radius:4px;background:rgba(255,190,0,0.15);color:#ffbe00;border:1px solid rgba(255,190,0,0.3);">ROUTE</span> badge.</div>
+        <div class="help-card">
+          <div class="help-card-title">Viewing Detail</div>
+          <div class="help-card-body">Tap any entry to see full details — coordinates, elevation, accuracy, and all unit conversions. Tap <em>View on Map</em> to see it plotted. Routes draw as a connected path; point-to-point shows a dashed line.</div>
+        </div>
+        <div class="help-card">
+          <div class="help-card-title">Renaming</div>
+          <div class="help-card-body">Tap the name in the detail view to rename any measurement or route to something meaningful.</div>
+        </div>
+        <div class="help-card">
+          <div class="help-card-title">Deleting</div>
+          <div class="help-card-body">Swipe left on any log entry to reveal the Delete button. To clear everything, tap the red Clear button in the top right of the Log tab.</div>
+        </div>
+        <div class="help-card">
+          <div class="help-card-title">Exporting</div>
+          <div class="help-card-body">Tap Export JSON to download all your data as a file. Routes include the full GPS point array.</div>
+        </div>
+      </div>
+
+      <!-- LOCK SPEED -->
+      <div class="help-section">
+        <div class="help-section-title">⚡ Lock Speed</div>
+        <div class="help-body" style="padding:0 0 10px;">Toggle between Fast, Medium, and Accurate when locking a point in Point to Point mode. Faster means fewer GPS samples. More accurate waits longer for a stronger, steadier signal.</div>
+        <div class="help-tip">🏌️ Golf yardages and property lines deserve Accurate. Measuring your driveway? Medium works great. Checking how far it is to Grandma's house as the crow flies? Fast — she's been waiting long enough.</div>
+      </div>
+
+      <!-- KEEP AWAKE -->
+      <div class="help-section">
+        <div class="help-section-title">☀ Keep Awake</div>
+        <div class="help-body">The Keep Awake button prevents your screen from going dark while the app is open. It appears on both the Measure and Golf tabs. Tap to toggle — it lights up cyan when active. The screen will dim after 10 seconds of no interaction to reduce brightness, but stays on. Tap anywhere to wake it back up.</div>
+        <div class="help-tip">🔋 Keep Awake combined with continuous GPS will use more battery. Starting with a full charge is recommended for long sessions like a full round of golf.</div>
+      </div>
+
+      <!-- GPS ACCURACY -->
       <div class="help-section">
         <div class="help-section-title">📡 GPS Accuracy — The Honest Truth</div>
         <div class="help-body">Your phone's GPS is genuinely impressive technology. It talks to satellites thousands of miles away and figures out where you are within a few meters. That said, it has opinions about where you are — and sometimes those opinions are wrong.</div>
@@ -1361,49 +1451,31 @@ html, body {
           <div class="help-card-title">🏠 Indoors</div>
           <div class="help-card-body">GPS signals pass through walls the way your motivation passes through a Monday morning — weakened and unreliable. Expect 30–100 feet of drift even standing still. The app works indoors but results may be creative.</div>
         </div>
-
         <div class="help-card">
-          <div class="help-card-title">🌳 Near Trees & Buildings</div>
+          <div class="help-card-title">🌳 Near Trees &amp; Buildings</div>
           <div class="help-card-body">Tall objects block and reflect satellite signals, causing "multipath error." Your phone might think it's 15 feet away from where it actually is. Urban canyons are particularly bad for this.</div>
         </div>
-
-        <div class="help-card">
-          <div class="help-card-title">☁️ Cloudy vs. Clear Sky</div>
-          <div class="help-card-body">Clouds don't actually affect GPS much — radio waves pass right through. What matters is how many satellites your phone can see. Clear sky = more satellites = better accuracy. Simple as that.</div>
-        </div>
-
         <div class="help-card">
           <div class="help-card-title">📶 Warm-Up Time</div>
-          <div class="help-card-body">GPS chips need a moment to settle. If you just stepped outside, the first reading is a rough guess. Stand still for 30–60 seconds before tapping Set Point A and you'll get a noticeably better fix. Think of it as letting the GPS have its morning coffee.</div>
+          <div class="help-card-body">GPS chips need a moment to settle. The Set Point A button pulses while warming up and lights up when ready. Stand still for the warmup and you'll get a noticeably better fix.</div>
         </div>
-
         <div class="help-card">
           <div class="help-card-title">🏔️ Elevation</div>
-          <div class="help-card-body">Horizontal GPS (your position on a map) is reasonably accurate. Vertical GPS (elevation) is notoriously worse — typically 2–3x less accurate. Treat elevation readings as a useful estimate, not a surveyor's measurement.</div>
+          <div class="help-card-body">Horizontal GPS is reasonably accurate. Vertical GPS (elevation) is typically 2–3x less accurate. Treat elevation readings as a useful estimate, not a surveyor's measurement.</div>
         </div>
-
-        <div class="help-card">
-          <div class="help-card-title">📏 Why No Feet?</div>
-          <div class="help-card-body">We intentionally left feet out. Phone GPS is typically accurate to ±10–30 feet outdoors — so displaying a result in feet would just be a more confident-looking wrong number. Yards are already at the edge of what GPS can reliably deliver. If you need foot-level precision, you need a tape measure.</div>
-        </div>
-
         <div class="help-card">
           <div class="help-card-title">📏 Realistic Accuracy Outdoors</div>
-          <div class="help-card-body">In good conditions with a clear sky, modern smartphones are typically accurate to 10–20 feet. Our GPS averaging helps tighten that up. For most uses — golf yardages, fence lines, property distances — that's more than good enough.</div>
+          <div class="help-card-body">In good conditions with a clear sky, modern smartphones are accurate to 10–20 feet. GPS averaging helps tighten that up. For golf yardages, fence lines, and property distances that's more than good enough.</div>
         </div>
       </div>
 
-      <div class="help-section">
-        <div class="help-section-title">🗑️ Deleting Measurements</div>
-        <div class="help-body">To delete a single measurement, go to the <em>Log</em> tab and <strong>swipe left</strong> on it — a red Delete button appears. Tap it to confirm. If swiping feels unnatural, think of it like brushing something off the screen to the left.</div>
-        <div class="help-tip" style="margin-top:8px;">To delete everything at once, tap the red <em>Clear</em> button in the top right of the Log tab. You'll get a confirmation prompt first so nothing disappears by accident.</div>
-      </div>
-
+      <!-- DATA -->
       <div class="help-section">
         <div class="help-section-title">💾 Your Data</div>
-        <div class="help-body">Measurements are saved to your browser's local storage — they survive page refreshes and closing the tab. They are stored only on your device and never sent anywhere. Use <em>Export JSON</em> in the Log tab to back them up or use them elsewhere.</div>
+        <div class="help-body">All measurements and routes are saved to your browser's local storage — they survive page refreshes and closing the tab. Data is stored only on your device and never sent anywhere. Use Export JSON in the Log tab to back everything up.</div>
       </div>
 
+      <!-- TROUBLESHOOTING -->
       <div class="help-section">
         <div class="help-section-title">🐛 Something Wrong?</div>
         <div class="help-body">If the app won't access your location, check that your browser has location permission enabled for this site. On most phones: Settings → Browser → Location → Allow.</div>
@@ -1412,7 +1484,7 @@ html, body {
 
       <div style="text-align:center; padding: 16px 0 8px; font-family:'DM Mono',monospace; font-size:9px; color:#666; letter-spacing:2px;">
         DIST TRKR · GPS · DISTANCE · TRACKER<br>
-        <span style="color:#777; font-size:11px; letter-spacing:1px;">v1.9.5</span>
+        <span style="color:#777; font-size:11px; letter-spacing:1px;">v1.9.8</span>
       </div>
 
     </div>
@@ -1831,6 +1903,7 @@ function setPointB() {
       measurements.push(entry);
       saveToStorage();
       addLogRow(entry);
+      switchTab('log');
 
       btn.textContent = 'Set Point B';
       btn.className = 'point-btn btn-b';
@@ -2159,6 +2232,7 @@ function switchTab(tab, silent) {
   });
   if (tab === 'golf') startGolfGpsWatch();
   else stopGolfGpsWatch();
+  if (!silent) localStorage.setItem('disttrkr_tab', tab);
 }
 
 function showScreen(name) {
@@ -2605,6 +2679,7 @@ function selectCourse(name, greens, tees) {
   }
 
   golfCurrentHole = 0;
+  saveGolfState();
   document.getElementById('golfCourseList').style.display = 'none';
   const hv = document.getElementById('golfHoleView');
   hv.style.display = 'flex';
@@ -2681,6 +2756,7 @@ function updateGolfDistances() {
 
 function changeHole(dir) {
   golfCurrentHole = (golfCurrentHole + dir + golfHoles.length) % golfHoles.length;
+  saveGolfState();
   renderHole();
 }
 
@@ -2688,6 +2764,7 @@ function resetGolfSearch() {
   golfHoles = [];
   golfCurrentHole = 0;
   golfCourseName = '';
+  clearGolfState();
   document.getElementById('golfSearch').style.display = 'flex';
   document.getElementById('golfCourseList').style.display = 'none';
   document.getElementById('golfHoleView').style.display = 'none';
@@ -2841,7 +2918,7 @@ let tracePoints   = [];
 let traceMeters   = 0;
 let traceWatchId  = null;
 let traceLastPos  = null;
-const TRACE_MIN_DIST = 5; // meters
+const TRACE_MIN_DIST = 10; // meters
 
 function routeStart() {
   if (!navigator.geolocation) {
@@ -3076,10 +3153,61 @@ function restoreTraceState() {
   }
 }
 
+
+// ── GOLF STATE PERSISTENCE ─────────────────────────────────
+
+function saveGolfState() {
+  if (!golfHoles.length) return;
+  const state = { name: golfCourseName, hole: golfCurrentHole, holes: golfHoles };
+  localStorage.setItem('disttrkr_golf', JSON.stringify(state));
+}
+
+function clearGolfState() {
+  localStorage.removeItem('disttrkr_golf');
+}
+
+function restoreGolfState() {
+  const raw = localStorage.getItem('disttrkr_golf');
+  if (!raw) return false;
+  try {
+    const state = JSON.parse(raw);
+    if (!state.holes || !state.holes.length) return false;
+
+    golfCourseName  = state.name;
+    golfHoles       = state.holes;
+    golfCurrentHole = state.hole || 0;
+
+    document.getElementById('golfCourseName').textContent = golfCourseName;
+    document.getElementById('golfSearch').style.display = 'none';
+    document.getElementById('golfCourseList').style.display = 'none';
+    const hv = document.getElementById('golfHoleView');
+    hv.style.display = 'flex';
+    hv.style.flexDirection = 'column';
+
+    renderHole();
+    startGolfGpsWatch();
+    return true;
+  } catch(e) {
+    clearGolfState();
+    return false;
+  }
+}
+
+// ── INIT ───────────────────────────────────────────────────
+
+function initTab() {
+  const saved = localStorage.getItem('disttrkr_tab');
+  if (saved && ['measure','golf','log','help'].includes(saved)) {
+    switchTab(saved, true);
+    if (saved === 'golf') restoreGolfState();
+  }
+}
+
 loadFromStorage();
 initSpeed();
 initMeasureMode();
 checkWelcome();
+initTab();
 </script>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 </body>
