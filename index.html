@@ -1592,7 +1592,7 @@ html, body {
 
       <div style="text-align:center; padding: 16px 0 8px; font-family:'DM Mono',monospace; font-size:9px; color:#666; letter-spacing:2px;">
         DIST TRKR · GPS · DISTANCE · TRACKER<br>
-        <span style="color:#777; font-size:11px; letter-spacing:1px;">v1.9.23</span>
+        <span style="color:#777; font-size:11px; letter-spacing:1px;">v1.9.24</span>
       </div>
 
     </div>
@@ -3342,10 +3342,11 @@ function routeStart() {
         if (d < TRACE_MIN_DIST) return;
         traceMeters += d;
       } else {
-        // First point — show start coords
+        // First point — show start coords and switch to live status
         document.getElementById('routeStartCoords').textContent =
           p.lat.toFixed(5) + ', ' + p.lon.toFixed(5);
         document.getElementById('routeStartAcc').textContent = '±' + Math.round(p.acc * 3.28084) + ' ft';
+        setRouteStatus('Tracing — tap Stop & Save when done', 'live');
       }
 
       tracePoints.push(p);
@@ -3409,7 +3410,7 @@ function routePause() {
   const btn = document.getElementById('routePauseBtn');
   btn.textContent = tracePaused ? '▶ Resume' : '⏸ Pause';
   btn.style.color = tracePaused ? 'var(--accent)' : 'var(--dim)';
-  setRouteStatus(tracePaused ? 'Paused — tap Resume to continue' : 'Tracing…', null);
+  setRouteStatus(tracePaused ? 'Paused — tap Resume to continue' : 'Tracing — tap Stop & Save when done', tracePaused ? null : 'live');
   saveTraceState();
 }
 
@@ -3449,6 +3450,7 @@ function resetRouteButtons() {
 function setRouteStatus(msg, type) {
   const el = document.getElementById('routeStatus');
   el.textContent = msg;
+  el.className = 'hero-status' + (type === 'live' ? ' live-state' : type === 'ok' ? ' ok-state' : type === 'error' ? ' error-state' : '');
 }
 
 function updateRouteDisplay() {
@@ -3508,7 +3510,7 @@ function restoreTraceState() {
       traceLastPos.lat.toFixed(5) + ', ' + traceLastPos.lon.toFixed(5);
 
     updateRouteDisplay();
-    setRouteStatus(tracePaused ? 'Paused — tap Resume to continue' : 'Route restored — still tracing…', null);
+    setRouteStatus(tracePaused ? 'Paused — tap Resume to continue' : 'Tracing — tap Stop & Save when done', tracePaused ? null : 'live');
 
     // Resume watch if not paused
     if (!tracePaused) {
