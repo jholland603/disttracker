@@ -1017,6 +1017,15 @@ html, body {
       </div>
     </div>
 
+    <!-- Keep Awake -->
+    <div style="padding:0 12px 4px; text-align:left;">
+      <button id="wakeLockToggleMeasure" onclick="toggleWakeLock()" style="
+        font-family:var(--mono); font-size:11px; padding:5px 12px;
+        border-radius:8px; border:1px solid var(--border);
+        background:transparent; color:var(--dim); cursor:pointer;
+        -webkit-tap-highlight-color:transparent;">Keep Awake</button>
+    </div>
+
     <!-- Distance hero in the middle -->
     <div class="hero">
       <div class="hero-ring" style="width:160px;height:160px;"></div>
@@ -1127,7 +1136,13 @@ html, body {
   <!-- ══ GOLF SCREEN ══ -->
   <div class="screen" id="screenGolf">
     <div class="log-top-bar">
-      <div class="log-title"></div>
+      <div style="display:flex; gap:8px; align-items:center;">
+        <button id="wakeLockToggle" onclick="toggleWakeLock()" style="
+          font-family:var(--mono); font-size:11px; padding:5px 12px;
+          border-radius:8px; border:1px solid var(--border);
+          background:transparent; color:var(--dim); cursor:pointer;
+          -webkit-tap-highlight-color:transparent;">Keep Awake</button>
+      </div>
       <div style="display:flex; gap:8px; align-items:center;">
         <button id="golfUnitToggle" onclick="toggleGolfUnit()" style="
           font-family:var(--mono); font-size:11px; padding:5px 12px;
@@ -2499,6 +2514,60 @@ function resetGolfSearch() {
   document.getElementById('golfHoleView').style.display = 'none';
   document.getElementById('golfSearchStatus').textContent = '';
 }
+
+
+// ── WAKE LOCK ──────────────────────────────────────────
+
+let wakeLock = null;
+let wakeLockEnabled = false;
+
+async function requestWakeLock() {
+  if (!('wakeLock' in navigator)) return;
+  try {
+    wakeLock = await navigator.wakeLock.request('screen');
+    wakeLock.addEventListener('release', () => {
+      // Re-acquire if user hasn't manually turned it off
+      if (wakeLockEnabled) requestWakeLock();
+    });
+  } catch(e) {}
+}
+
+function releaseWakeLock() {
+  if (wakeLock) { wakeLock.release(); wakeLock = null; }
+}
+
+async function toggleWakeLock() {
+  wakeLockEnabled = !wakeLockEnabled;
+  if (wakeLockEnabled) {
+    await requestWakeLock();
+  } else {
+    releaseWakeLock();
+  }
+  updateWakeLockButtons();
+}
+
+function updateWakeLockButtons() {
+  ['wakeLockToggle', 'wakeLockToggleMeasure'].forEach(id => {
+    const btn = document.getElementById(id);
+    if (!btn) return;
+    if (wakeLockEnabled) {
+      btn.style.border = '1px solid rgba(0,229,255,0.3)';
+      btn.style.background = 'rgba(0,229,255,0.08)';
+      btn.style.color = 'var(--accent)';
+    } else {
+      btn.style.border = '1px solid var(--border)';
+      btn.style.background = 'transparent';
+      btn.style.color = 'var(--dim)';
+    }
+  });
+}
+
+// Re-acquire wake lock when page becomes visible again
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible' && wakeLockEnabled) {
+    requestWakeLock();
+  }
+});
 
 loadFromStorage();
 initSpeed();
