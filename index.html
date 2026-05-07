@@ -920,6 +920,18 @@ html, body {
 .elev-up .elev-arrow, .elev-up .elev-val { color: var(--red); }
 .elev-down .elev-arrow, .elev-down .elev-val { color: var(--green); }
 .elev-flat .elev-arrow, .elev-flat .elev-val { color: var(--dim); }
+
+/* ── DIM OVERLAY ─────────────────────────────────────────── */
+#dimOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.75);
+  z-index: 9999;
+  display: none;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+#dimOverlay.active { display: block; }
 </style>
 </head>
 <body>
@@ -936,7 +948,8 @@ html, body {
   <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
 </div>
 
-<div class="app">
+<div id="dimOverlay" onclick="wakeFromDim()"></div>
+  <div class="app">
 
   <div style="text-align:center; background: rgba(20,20,22,0.98); border-bottom: none; flex-shrink:0; margin: 0 -12px; padding: 0 12px;">
     <svg xmlns="http://www.w3.org/2000/svg" width="100%" viewBox="0 0 680 320" style="max-height:260px;">
@@ -1217,6 +1230,11 @@ html, body {
         <div id="golfUnitCenter" style="font-family:var(--mono); font-size:13px; color:var(--dim); letter-spacing:2px; margin-top:6px;">YD</div>
         <div style="font-family:var(--mono); font-size:10px; color:var(--dim); letter-spacing:1px; margin-top:8px;">TO CENTER OF GREEN</div>
         <div id="golfGpsStatus" style="font-family:var(--mono); font-size:11px; color:var(--dim); letter-spacing:1px; margin-top:12px;"></div>
+        <!-- Tee distances — shown only if tee data available -->
+        <div id="golfTeeDistances" style="margin-top:20px; width:100%; max-width:320px; display:none;">
+          <div style="font-family:var(--mono); font-size:10px; color:var(--dim); letter-spacing:2px; margin-bottom:8px;">FROM TEES</div>
+          <div id="golfTeeItems" style="display:flex; flex-direction:column; gap:6px;"></div>
+        </div>
       </div>
     </div>
   </div>
@@ -1313,7 +1331,7 @@ html, body {
 
       <div style="text-align:center; padding: 16px 0 8px; font-family:'DM Mono',monospace; font-size:9px; color:#666; letter-spacing:2px;">
         DIST TRKR · GPS · DISTANCE · TRACKER<br>
-        <span style="color:#777; font-size:11px; letter-spacing:1px;">v1.7</span>
+        <span style="color:#777; font-size:11px; letter-spacing:1px;">v1.8</span>
       </div>
 
     </div>
@@ -2354,6 +2372,8 @@ function fetchHoleDataForCourses(courses, lat, lon) {
   const query = `[out:json][timeout:30];
 (
   way[golf=green](around:5000,${lat},${lon});
+  way[golf=tee](around:5000,${lat},${lon});
+  node[golf=tee](around:5000,${lat},${lon});
 );
 out center tags;`;
 
@@ -2370,24 +2390,22 @@ out center tags;`;
 
     // Group greens — each green way has a center lat/lon
     // We'll just find all greens and group by proximity to course center
-    const greens = data.elements.filter(e => e.center);
+    const greens = data.elements.filter(e => e.tags && e.tags.golf === 'green' && e.center);
+    const tees   = data.elements.filter(e => e.tags && e.tags.golf === 'tee' && (e.center || (e.lat && e.lon)));
 
     if (greens.length === 0) {
       statusEl.textContent = 'No hole data available for nearby courses.';
       return;
     }
 
-    // Build courses with greens
-    // Match greens to courses by checking which named course they belong to
-    // For simplicity, show all courses that have at least one green nearby
-    showCourseList(courses, greens, lat, lon);
+    showCourseList(courses, greens, tees, lat, lon);
   })
   .catch(() => {
     statusEl.textContent = 'Network error loading hole data.';
   });
 }
 
-function showCourseList(courses, greens, userLat, userLon) {
+function showCourseList(courses, greens, tees, userLat, userLon) {
   // Assign greens to courses — use ref tag or proximity
   // Build a map of courseId -> greens array
   // Since OSM doesn't always link greens to courses via relation,
@@ -2413,7 +2431,7 @@ function showCourseList(courses, greens, userLat, userLon) {
       <div style="font-family:var(--sans); font-size:15px; font-weight:600; color:var(--text); margin-bottom:4px;">${name}</div>
       <div style="font-family:var(--mono); font-size:11px; color:var(--dim);">${[holes, par].filter(Boolean).join(' · ')}</div>
     `;
-    div.onclick = () => selectCourse(name, greens);
+    div.onclick = () => selectCourse(name, greens, tees);
     itemsEl.appendChild(div);
   });
 
@@ -2422,31 +2440,36 @@ function showCourseList(courses, greens, userLat, userLon) {
   document.getElementById('golfCourseList').style.flexDirection = 'column';
 }
 
-function selectCourse(name, greens) {
+function selectCourse(name, greens, tees) {
   golfCourseName = name;
   document.getElementById('golfCourseName').textContent = name;
 
-  // Sort greens by hole ref number if available, else by lat
+  // Sort greens by hole ref number
   const sorted = [...greens].sort((a, b) => {
     const ra = parseInt(a.tags && a.tags.ref) || 999;
     const rb = parseInt(b.tags && b.tags.ref) || 999;
     return ra - rb;
   });
 
-  // Build hole objects from greens
+  // Build hole objects from greens, matching tees by ref
   golfHoles = sorted.map((g, i) => {
     const ref = (g.tags && g.tags.ref) ? parseInt(g.tags.ref) : i + 1;
-    // Try to get front/center/back from OSM tags, else approximate from center
     const centerLat = g.center.lat;
     const centerLon = g.center.lon;
+
+    // Find tees matching this hole's ref number
+    const holeTees = tees.filter(t => t.tags && parseInt(t.tags.ref) === ref);
+    const teeCenters = holeTees.map(t => ({
+      lat: t.center ? t.center.lat : t.lat,
+      lon: t.center ? t.center.lon : t.lon,
+      label: t.tags['golf:tee'] || t.tags.tee || null
+    }));
+
     return {
       num: ref,
       par: g.tags && g.tags['golf:par'] ? g.tags['golf:par'] : null,
       center: {lat: centerLat, lon: centerLon},
-      // Approximate front/back as ±13m offset (~14 yds) along lat axis
-      // giving ~28 yard front-to-back spread, typical for a golf green
-      front:  {lat: centerLat - 0.00012, lon: centerLon},
-      back:   {lat: centerLat + 0.00012, lon: centerLon},
+      tees: teeCenters
     };
   });
 
@@ -2471,8 +2494,8 @@ function renderHole() {
   document.getElementById('golfParLabel').textContent = hole.par ? 'PAR ' + hole.par : '';
 
   // Prev/next button states
-  document.getElementById('golfPrevHole').style.opacity = golfCurrentHole === 0 ? '0.3' : '1';
-  document.getElementById('golfNextHole').style.opacity = golfCurrentHole === golfHoles.length - 1 ? '0.3' : '1';
+  document.getElementById('golfPrevHole').style.opacity = '1';
+  document.getElementById('golfNextHole').style.opacity = '1';
 
   updateGolfDistances();
 }
@@ -2495,13 +2518,32 @@ function updateGolfDistances() {
 
   document.getElementById('golfGpsStatus').textContent =
     '±' + Math.round(acc * (golfUnit === 'yd' ? 1.09361 : 1)) + ' ' + golfUnitLabel() + ' GPS accuracy';
+
+  // Tee distances
+  const teeContainer = document.getElementById('golfTeeDistances');
+  const teeItems = document.getElementById('golfTeeItems');
+  if (hole.tees && hole.tees.length > 0) {
+    teeContainer.style.display = 'block';
+    teeItems.innerHTML = hole.tees.map(t => {
+      const d = golfHaversine(lat, lon, t.lat, t.lon);
+      const label = t.label ? t.label.charAt(0).toUpperCase() + t.label.slice(1) + ' tee' : 'Tee';
+      return `<div style="display:flex; justify-content:space-between; align-items:center;
+                padding:8px 12px; background:var(--panel); border:1px solid var(--border);
+                border-radius:10px;">
+        <span style="font-family:var(--sans); font-size:13px; color:var(--mid);">${label}</span>
+        <span style="font-family:var(--display); font-size:18px; font-weight:800; color:var(--dim);">
+          ${toGolfUnit(d)} <span style="font-family:var(--mono); font-size:10px;">${golfUnitLabel()}</span>
+        </span>
+      </div>`;
+    }).join('');
+  } else {
+    teeContainer.style.display = 'none';
+  }
 }
 
 
 function changeHole(dir) {
-  const next = golfCurrentHole + dir;
-  if (next < 0 || next >= golfHoles.length) return;
-  golfCurrentHole = next;
+  golfCurrentHole = (golfCurrentHole + dir + golfHoles.length) % golfHoles.length;
   renderHole();
 }
 
@@ -2540,8 +2582,10 @@ async function toggleWakeLock() {
   wakeLockEnabled = !wakeLockEnabled;
   if (wakeLockEnabled) {
     await requestWakeLock();
+    resetDimTimer();
   } else {
     releaseWakeLock();
+    stopDimTimer();
   }
   updateWakeLockButtons();
 }
@@ -2568,6 +2612,37 @@ document.addEventListener('visibilitychange', () => {
     requestWakeLock();
   }
 });
+
+
+// ── DIM OVERLAY ────────────────────────────────────────────
+
+let dimTimer = null;
+const DIM_DELAY = 10000; // 10 seconds
+
+function resetDimTimer() {
+  if (!wakeLockEnabled) return;
+  clearTimeout(dimTimer);
+  dimTimer = setTimeout(() => {
+    document.getElementById('dimOverlay').classList.add('active');
+  }, DIM_DELAY);
+}
+
+function wakeFromDim() {
+  document.getElementById('dimOverlay').classList.remove('active');
+  resetDimTimer();
+}
+
+function stopDimTimer() {
+  clearTimeout(dimTimer);
+  document.getElementById('dimOverlay').classList.remove('active');
+}
+
+// Hook into wake lock toggle to start/stop dim timer
+const _origToggleWakeLock = toggleWakeLock;
+// Patch: resetDimTimer is called after wakeLockEnabled is set in toggleWakeLock
+// We listen via document interaction instead
+document.addEventListener('touchstart', () => { if (wakeLockEnabled) resetDimTimer(); }, {passive:true});
+document.addEventListener('click', () => { if (wakeLockEnabled) resetDimTimer(); }, {passive:true});
 
 loadFromStorage();
 initSpeed();
