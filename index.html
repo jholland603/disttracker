@@ -408,8 +408,7 @@ html, body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  padding: 16px 28px 32px;
+  padding: 20px 24px 32px;
   z-index: 200;
   text-align: center;
   overflow-y: auto;
@@ -417,23 +416,80 @@ html, body {
 .welcome-screen.hidden { display: none; }
 .welcome-headline {
   font-family: var(--display);
-  font-size: 28px;
+  font-size: 22px;
   font-weight: 800;
   color: var(--text);
-  margin-bottom: 20px;
-  line-height: 1.15;
+  margin-bottom: 6px;
+  line-height: 1.2;
   letter-spacing: 0.5px;
 }
-.welcome-body {
+.welcome-sub {
   font-family: var(--sans);
-  font-size: 14px;
-  color: var(--mid);
-  line-height: 1.7;
-  margin-bottom: 32px;
-  max-width: 340px;
+  font-size: 13px;
+  color: var(--dim);
+  margin-bottom: 18px;
+  line-height: 1.5;
 }
-.welcome-body p { margin-bottom: 14px; }
-.welcome-body p:last-child { margin-bottom: 0; }
+.welcome-features {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  width: 100%;
+  max-width: 360px;
+  margin-bottom: 16px;
+}
+.welcome-feature-card {
+  background: var(--panel);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 12px;
+  padding: 12px 10px;
+  text-align: left;
+}
+.welcome-feature-icon {
+  font-size: 18px;
+  margin-bottom: 5px;
+}
+.welcome-feature-title {
+  font-family: var(--sans);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 2px;
+}
+.welcome-feature-body {
+  font-family: var(--sans);
+  font-size: 11px;
+  color: var(--dim);
+  line-height: 1.45;
+}
+.welcome-privacy-card {
+  width: 100%;
+  max-width: 360px;
+  background: rgba(0,229,255,0.05);
+  border: 1px solid rgba(0,229,255,0.2);
+  border-radius: 12px;
+  padding: 12px 16px;
+  margin-bottom: 18px;
+  text-align: left;
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+.welcome-privacy-card-icon {
+  font-size: 20px;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+.welcome-privacy-card-text {
+  font-family: var(--sans);
+  font-size: 12px;
+  color: #aaa;
+  line-height: 1.55;
+}
+.welcome-privacy-card-text strong {
+  color: var(--accent);
+  font-weight: 600;
+}
 .welcome-go-btn {
   font-family: var(--display);
   font-size: 22px;
@@ -448,14 +504,15 @@ html, body {
   transition: all 0.15s;
   -webkit-tap-highlight-color: transparent;
   box-shadow: 0 0 30px rgba(0,229,255,0.3);
+  margin-bottom: 4px;
 }
 .welcome-go-btn:hover { background: #33eaff; box-shadow: 0 0 40px rgba(0,229,255,0.5); }
 .welcome-go-btn:active { transform: scale(0.97); }
 .welcome-privacy {
   font-family: var(--mono);
   font-size: 9px;
-  color: #2a2a2e;
-  margin-top: 16px;
+  color: #555;
+  margin-top: 10px;
   letter-spacing: 0.5px;
   line-height: 1.5;
 }
@@ -1003,8 +1060,8 @@ html, body {
 
     <!-- ══ WELCOME OVERLAY (first visit only) ══ -->
     <div class="welcome-screen" id="welcomeScreen">
-      <!-- Logo inside welcome screen -->
-      <svg xmlns="http://www.w3.org/2000/svg" width="100%" viewBox="0 0 680 320" style="max-height:135px; margin-bottom:16px; flex-shrink:0;">
+      <!-- Logo -->
+      <svg xmlns="http://www.w3.org/2000/svg" width="100%" viewBox="0 0 680 320" style="max-height:110px; margin-bottom:12px; flex-shrink:0;">
         <defs><style>@import url('https://fonts.googleapis.com/css2?family=Syne:wght@800&amp;display=swap');</style></defs>
         <circle cx="340" cy="160" r="148" fill="none" stroke="#252e3a" stroke-width="1.5"/>
         <circle cx="340" cy="160" r="108" fill="none" stroke="#1e2730" stroke-width="1"/>
@@ -1014,11 +1071,42 @@ html, body {
         <g transform="translate(520, 133)"><path d="M36 0 C16.118 0 0 16.118 0 36 C0 63 36 92 36 92 C36 92 72 63 72 36 C72 16.118 55.882 0 36 0Z" fill="#39ff14"/><circle cx="36" cy="34" r="13" fill="#0a0c0f"/></g>
         <text x="340" y="236" text-anchor="middle" font-family="'Syne', sans-serif" font-weight="800" font-size="54" letter-spacing="8" fill="#e8e8e8">TRKR</text>
       </svg>
-      <div class="welcome-headline">Let's Measure Something.</div>
-      <div class="welcome-body">
-        <p>DIST TRKR uses your phone's GPS to measure the straight-line distance between two points. Walk from Point A to Point B — that's really all there is to it.</p>
-        <p>In a moment your phone will ask for location permission. This is just so the app can access your device's GPS to give you the measurements you want. Your GPS data never leaves your device. We don't care where you went to breakfast or where you're going later.</p>
+
+      <div class="welcome-headline">GPS Distance Measurement</div>
+      <div class="welcome-sub">Point-to-point distances, route tracing, and golf GPS — free, fast, no account needed.</div>
+
+      <!-- Feature cards -->
+      <div class="welcome-features">
+        <div class="welcome-feature-card">
+          <div class="welcome-feature-icon">📍</div>
+          <div class="welcome-feature-title">Point to Point</div>
+          <div class="welcome-feature-body">Set Point A, walk, set Point B. Live distance updates as you move.</div>
+        </div>
+        <div class="welcome-feature-card">
+          <div class="welcome-feature-icon">🗺️</div>
+          <div class="welcome-feature-title">Route Tracing</div>
+          <div class="welcome-feature-body">Trace any path — trails, perimeters, fields — and get the total walked distance.</div>
+        </div>
+        <div class="welcome-feature-card">
+          <div class="welcome-feature-icon">⛳</div>
+          <div class="welcome-feature-title">Golf GPS</div>
+          <div class="welcome-feature-body">Live distance to the green, tee yardages, par and handicap per hole.</div>
+        </div>
+        <div class="welcome-feature-card">
+          <div class="welcome-feature-icon">📏</div>
+          <div class="welcome-feature-title">Multiple Units</div>
+          <div class="welcome-feature-body">Yards, feet, miles, meters, or kilometers — switch anytime.</div>
+        </div>
       </div>
+
+      <!-- Privacy / GPS notice -->
+      <div class="welcome-privacy-card">
+        <div class="welcome-privacy-card-icon">🔒</div>
+        <div class="welcome-privacy-card-text">
+          <strong>Your location never leaves your device.</strong> GPS is used only to calculate distances. We don't collect, store, or share your data — no account, no tracking, no cloud sync. In a moment your phone will ask for location permission — this is required for the app to work.
+        </div>
+      </div>
+
       <button class="welcome-go-btn" onclick="dismissWelcome()">GO</button>
       <div class="welcome-privacy">By continuing you agree to our <a href="/privacy" target="_blank">privacy policy</a></div>
     </div>
@@ -1504,7 +1592,7 @@ html, body {
 
       <div style="text-align:center; padding: 16px 0 8px; font-family:'DM Mono',monospace; font-size:9px; color:#666; letter-spacing:2px;">
         DIST TRKR · GPS · DISTANCE · TRACKER<br>
-        <span style="color:#777; font-size:11px; letter-spacing:1px;">v1.9.20</span>
+        <span style="color:#777; font-size:11px; letter-spacing:1px;">v1.9.22</span>
       </div>
 
     </div>
@@ -3194,7 +3282,7 @@ let tracePoints   = [];
 let traceMeters   = 0;
 let traceWatchId  = null;
 let traceLastPos  = null;
-const TRACE_MIN_DIST = 10; // meters
+const TRACE_MIN_DIST = 5; // meters
 
 function routeStart() {
   if (!navigator.geolocation) {
@@ -3224,6 +3312,11 @@ function routeStart() {
   btnStart.disabled    = true;
   btnStop.disabled     = false;
   btnPause.disabled    = false;
+
+  // Light up green at 0 immediately, like P2P does
+  const distEl = document.getElementById('routeDistNum');
+  distEl.textContent = '0';
+  distEl.className = 'distance-number live';
 
   setRouteStatus('Tracing… waiting for GPS', null);
 
@@ -3352,7 +3445,11 @@ function updateRouteDisplay() {
   const el = document.getElementById('routeDistNum');
   const val = fmt(traceMeters);
   el.textContent = val;
-  el.className = 'distance-number' + (traceMeters === 0 ? ' zero' : '');
+  if (traceMeters === 0) {
+    el.className = traceActive ? 'distance-number live' : 'distance-number zero';
+  } else {
+    el.className = 'distance-number live';
+  }
   document.getElementById('routePointCount').textContent =
     tracePoints.length + ' GPS pts';
   syncRouteUnitChips();
