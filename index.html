@@ -952,7 +952,7 @@ html, body {
   <div class="app">
 
   <div style="text-align:center; background: rgba(20,20,22,0.98); border-bottom: none; flex-shrink:0; margin: 0 -12px; padding: 0 12px;">
-    <svg xmlns="http://www.w3.org/2000/svg" width="100%" viewBox="0 0 680 320" style="max-height:260px;">
+    <svg xmlns="http://www.w3.org/2000/svg" width="100%" viewBox="0 0 680 320" style="max-height:195px;">
       <defs>
         <style>@import url('https://fonts.googleapis.com/css2?family=Syne:wght@800&amp;display=swap');</style>
       </defs>
@@ -999,7 +999,7 @@ html, body {
     <!-- ══ WELCOME OVERLAY (first visit only) ══ -->
     <div class="welcome-screen" id="welcomeScreen">
       <!-- Logo inside welcome screen -->
-      <svg xmlns="http://www.w3.org/2000/svg" width="100%" viewBox="0 0 680 320" style="max-height:180px; margin-bottom:16px; flex-shrink:0;">
+      <svg xmlns="http://www.w3.org/2000/svg" width="100%" viewBox="0 0 680 320" style="max-height:135px; margin-bottom:16px; flex-shrink:0;">
         <defs><style>@import url('https://fonts.googleapis.com/css2?family=Syne:wght@800&amp;display=swap');</style></defs>
         <circle cx="340" cy="160" r="148" fill="none" stroke="#252e3a" stroke-width="1.5"/>
         <circle cx="340" cy="160" r="108" fill="none" stroke="#1e2730" stroke-width="1"/>
@@ -1034,15 +1034,6 @@ html, body {
         background:transparent; border:1px solid var(--border); color:var(--dim);">
         ROUTE
       </button>
-    </div>
-
-    <!-- Keep Awake -->
-    <div style="padding:2px 12px 4px; text-align:left; flex-shrink:0;">
-      <button id="wakeLockToggleMeasure" onclick="toggleWakeLock()" style="
-        font-family:var(--mono); font-size:11px; padding:5px 12px;
-        border-radius:8px; border:1px solid var(--border);
-        background:transparent; color:var(--dim); cursor:pointer;
-        -webkit-tap-highlight-color:transparent;">Keep Awake</button>
     </div>
 
     <!-- ── POINT TO POINT layout ── -->
@@ -1087,10 +1078,15 @@ html, body {
         </div>
       </div>
 
-      <!-- Speed toggle -->
-      <div class="speed-toggle-row">
+      <!-- Speed toggle + Keep Awake -->
+      <div class="speed-toggle-row" style="display:flex; align-items:center; gap:8px;">
         <button class="speed-toggle-btn" id="speedToggleBtn" onclick="cycleSpeed()">⚡ Fast Lock</button>
-        <div class="speed-toggle-msg" id="speedToggleMsg"></div>
+        <div class="speed-toggle-msg" id="speedToggleMsg" style="flex:1;"></div>
+        <button id="wakeLockToggleMeasure" onclick="toggleWakeLock()" style="
+          font-family:var(--mono); font-size:12px; padding:8px 18px;
+          border-radius:10px; border:1.5px solid rgba(255,255,255,0.15);
+          background:rgba(255,255,255,0.05); color:#bbb; cursor:pointer; font-weight:600;
+          white-space:nowrap; -webkit-tap-highlight-color:transparent;">Keep Awake</button>
       </div>
 
       <div class="reset-row">
@@ -1141,13 +1137,18 @@ html, body {
         </div>
       </div>
 
-      <!-- Pause + Reset row -->
+      <!-- Pause + Keep Awake row -->
       <div class="speed-toggle-row" style="display:flex; align-items:center; gap:8px;">
         <button id="routePauseBtn" onclick="routePause()" disabled style="
           padding:8px 18px; border-radius:10px; font-family:var(--sans); font-size:13px; font-weight:600;
           background:rgba(255,255,255,0.06); border:1px solid var(--border);
           color:var(--dim); cursor:pointer; -webkit-tap-highlight-color:transparent;">⏸ Pause</button>
         <div id="routePointCount" style="font-family:var(--mono); font-size:11px; color:var(--dim); flex:1; text-align:center;"></div>
+        <button id="wakeLockToggleRoute" onclick="toggleWakeLock()" style="
+          font-family:var(--mono); font-size:12px; padding:8px 18px;
+          border-radius:10px; border:1.5px solid rgba(255,255,255,0.15);
+          background:rgba(255,255,255,0.05); color:#bbb; cursor:pointer; font-weight:600;
+          white-space:nowrap; -webkit-tap-highlight-color:transparent;">Keep Awake</button>
       </div>
 
       <div class="reset-row">
@@ -1231,9 +1232,9 @@ html, body {
     <div class="log-top-bar">
       <div style="display:flex; gap:8px; align-items:center;">
         <button id="wakeLockToggle" onclick="toggleWakeLock()" style="
-          font-family:var(--mono); font-size:11px; padding:5px 12px;
-          border-radius:8px; border:1px solid var(--border);
-          background:transparent; color:var(--dim); cursor:pointer;
+          font-family:var(--mono); font-size:12px; padding:8px 18px;
+          border-radius:10px; border:1.5px solid rgba(255,255,255,0.15);
+          background:rgba(255,255,255,0.05); color:#bbb; cursor:pointer; font-weight:600;
           -webkit-tap-highlight-color:transparent;">Keep Awake</button>
       </div>
       <div style="display:flex; gap:8px; align-items:center;">
@@ -1411,7 +1412,7 @@ html, body {
 
       <div style="text-align:center; padding: 16px 0 8px; font-family:'DM Mono',monospace; font-size:9px; color:#666; letter-spacing:2px;">
         DIST TRKR · GPS · DISTANCE · TRACKER<br>
-        <span style="color:#777; font-size:11px; letter-spacing:1px;">v1.9.1</span>
+        <span style="color:#777; font-size:11px; letter-spacing:1px;">v1.9.3</span>
       </div>
 
     </div>
@@ -2727,17 +2728,17 @@ async function toggleWakeLock() {
 }
 
 function updateWakeLockButtons() {
-  ['wakeLockToggle', 'wakeLockToggleMeasure'].forEach(id => {
+  ['wakeLockToggle', 'wakeLockToggleMeasure', 'wakeLockToggleRoute'].forEach(id => {
     const btn = document.getElementById(id);
     if (!btn) return;
     if (wakeLockEnabled) {
-      btn.style.border = '1px solid rgba(0,229,255,0.3)';
-      btn.style.background = 'rgba(0,229,255,0.08)';
+      btn.style.border = '1.5px solid rgba(0,229,255,0.5)';
+      btn.style.background = 'rgba(0,229,255,0.12)';
       btn.style.color = 'var(--accent)';
     } else {
-      btn.style.border = '1px solid var(--border)';
-      btn.style.background = 'transparent';
-      btn.style.color = 'var(--dim)';
+      btn.style.border = '1.5px solid rgba(255,255,255,0.15)';
+      btn.style.background = 'rgba(255,255,255,0.05)';
+      btn.style.color = '#bbb';
     }
   });
 }
