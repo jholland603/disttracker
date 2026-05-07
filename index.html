@@ -2462,7 +2462,7 @@ function selectCourse(name, greens, tees) {
     const teeCenters = holeTees.map(t => ({
       lat: t.center ? t.center.lat : t.lat,
       lon: t.center ? t.center.lon : t.lon,
-      label: t.tags['golf:tee'] || t.tags.tee || null
+      label: t.tags.colour || t.tags.color || t.tags['golf:tee'] || t.tags.tee || t.tags.name || null
     }));
 
     return {
@@ -2524,14 +2524,25 @@ function updateGolfDistances() {
   const teeItems = document.getElementById('golfTeeItems');
   if (hole.tees && hole.tees.length > 0) {
     teeContainer.style.display = 'block';
+    const TEE_COLORS = {
+      black:  { bg: 'rgba(255,255,255,0.06)', border: 'rgba(255,255,255,0.2)',  text: '#e0e0e0' },
+      blue:   { bg: 'rgba(30,100,255,0.15)',  border: 'rgba(30,100,255,0.5)',   text: '#6aa3ff' },
+      white:  { bg: 'rgba(255,255,255,0.08)', border: 'rgba(255,255,255,0.35)', text: '#ffffff' },
+      red:    { bg: 'rgba(255,60,60,0.12)',   border: 'rgba(255,60,60,0.4)',    text: '#ff6b6b' },
+      yellow: { bg: 'rgba(255,210,0,0.12)',   border: 'rgba(255,210,0,0.4)',    text: '#ffd600' },
+      green:  { bg: 'rgba(57,255,20,0.1)',    border: 'rgba(57,255,20,0.35)',   text: '#39ff14' },
+      gold:   { bg: 'rgba(255,180,0,0.12)',   border: 'rgba(255,180,0,0.4)',    text: '#ffb800' },
+    };
     teeItems.innerHTML = hole.tees.map(t => {
       const d = golfHaversine(lat, lon, t.lat, t.lon);
       const label = t.label ? t.label.charAt(0).toUpperCase() + t.label.slice(1) + ' tee' : 'Tee';
+      const colorKey = t.label ? t.label.toLowerCase() : null;
+      const c = (colorKey && TEE_COLORS[colorKey]) ? TEE_COLORS[colorKey] : { bg: 'var(--panel)', border: 'var(--border)', text: 'var(--dim)' };
       return `<div style="display:flex; justify-content:space-between; align-items:center;
-                padding:8px 12px; background:var(--panel); border:1px solid var(--border);
+                padding:8px 12px; background:${c.bg}; border:1px solid ${c.border};
                 border-radius:10px;">
-        <span style="font-family:var(--sans); font-size:13px; color:var(--mid);">${label}</span>
-        <span style="font-family:var(--display); font-size:18px; font-weight:800; color:var(--dim);">
+        <span style="font-family:var(--sans); font-size:13px; color:${c.text};">${label}</span>
+        <span style="font-family:var(--display); font-size:18px; font-weight:800; color:${c.text};">
           ${toGolfUnit(d)} <span style="font-family:var(--mono); font-size:10px;">${golfUnitLabel()}</span>
         </span>
       </div>`;
