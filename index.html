@@ -994,6 +994,63 @@ html, body {
   -webkit-tap-highlight-color: transparent;
 }
 #dimOverlay.active { display: block; }
+
+/* Keep Awake prompt */
+#keepAwakePrompt {
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  background: var(--panel);
+  border-top: 1px solid rgba(0,229,255,0.2);
+  border-radius: 18px 18px 0 0;
+  padding: 20px 24px 36px;
+  z-index: 10000;
+  transform: translateY(100%);
+  transition: transform 0.28s cubic-bezier(0.34,1.2,0.64,1);
+  box-shadow: 0 -8px 32px rgba(0,0,0,0.5);
+}
+#keepAwakePrompt.visible { transform: translateY(0); }
+.kap-icon { font-size: 28px; margin-bottom: 8px; }
+.kap-title {
+  font-family: var(--display);
+  font-size: 17px;
+  font-weight: 800;
+  color: var(--text);
+  margin-bottom: 6px;
+}
+.kap-body {
+  font-family: var(--sans);
+  font-size: 13px;
+  color: var(--dim);
+  line-height: 1.55;
+  margin-bottom: 18px;
+}
+.kap-btns { display: flex; gap: 10px; }
+.kap-btn-yes {
+  flex: 1;
+  background: var(--accent);
+  color: #000;
+  font-family: var(--display);
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  border: none;
+  border-radius: 12px;
+  padding: 14px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.kap-btn-no {
+  flex: 1;
+  background: transparent;
+  color: var(--dim);
+  font-family: var(--sans);
+  font-size: 14px;
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 12px;
+  padding: 14px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
 </style>
 </head>
 <body>
@@ -1011,6 +1068,17 @@ html, body {
 </div>
 
 <div id="dimOverlay" onclick="wakeFromDim()"></div>
+
+<!-- Keep Awake prompt (shown once after route Start) -->
+<div id="keepAwakePrompt">
+  <div class="kap-icon">🔆</div>
+  <div class="kap-title">Keep screen awake?</div>
+  <div class="kap-body">Prevents GPS from sleeping while you trace your route. Recommended for longer walks.</div>
+  <div class="kap-btns">
+    <button class="kap-btn-yes" onclick="keepAwakePromptAnswer(true)">Yes, keep awake</button>
+    <button class="kap-btn-no"  onclick="keepAwakePromptAnswer(false)">No thanks</button>
+  </div>
+</div>
   <div class="app">
 
   <div style="text-align:center; background: rgba(20,20,22,0.98); border-bottom: none; flex-shrink:0; margin: 0 -12px; padding: 0 12px;">
@@ -1592,7 +1660,7 @@ html, body {
 
       <div style="text-align:center; padding: 16px 0 8px; font-family:'DM Mono',monospace; font-size:9px; color:#666; letter-spacing:2px;">
         DIST TRKR · GPS · DISTANCE · TRACKER<br>
-        <span style="color:#777; font-size:11px; letter-spacing:1px;">v1.9.25</span>
+        <span style="color:#777; font-size:11px; letter-spacing:1px;">v1.9.26</span>
       </div>
 
     </div>
@@ -3192,6 +3260,30 @@ function updateWakeLockButtons() {
   });
 }
 
+// ── KEEP AWAKE ROUTE PROMPT ─────────────────────────────────
+function maybeShowKeepAwakePrompt() {
+  const pref = localStorage.getItem('disttrkr_keepawake_pref');
+  if (pref === 'yes') {
+    // Previously said yes — enable silently
+    if (!wakeLockEnabled) toggleWakeLock();
+    return;
+  }
+  if (pref === 'no') {
+    // Previously said no — respect that, don't ask again
+    return;
+  }
+  // First time — show the prompt after a short delay so Start animation settles
+  setTimeout(() => {
+    document.getElementById('keepAwakePrompt').classList.add('visible');
+  }, 400);
+}
+
+function keepAwakePromptAnswer(yes) {
+  document.getElementById('keepAwakePrompt').classList.remove('visible');
+  localStorage.setItem('disttrkr_keepawake_pref', yes ? 'yes' : 'no');
+  if (yes && !wakeLockEnabled) toggleWakeLock();
+}
+
 // Re-acquire wake lock when page becomes visible again
 document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'visible' && wakeLockEnabled) {
@@ -3361,6 +3453,8 @@ function routeStart() {
     () => {},
     {enableHighAccuracy: true, maximumAge: 0}
   );
+
+  maybeShowKeepAwakePrompt();
 }
 
 function routeStop() {
@@ -3372,6 +3466,7 @@ function routeStop() {
   traceActive  = false;
   tracePaused  = false;
 
+  document.getElementById('keepAwakePrompt').classList.remove('visible');
   resetRouteButtons();
   clearTraceState();
 
@@ -3421,6 +3516,7 @@ function resetRoute() {
     traceActive = false;
     tracePaused = false;
   }
+  document.getElementById('keepAwakePrompt').classList.remove('visible');
   tracePoints  = [];
   traceMeters  = 0;
   traceLastPos = null;
