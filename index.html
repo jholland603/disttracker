@@ -1018,20 +1018,26 @@ html, body {
       <div class="welcome-privacy">By continuing you agree to our <a href="/privacy" target="_blank">privacy policy</a></div>
     </div>
 
-    <!-- Point A at top -->
-    <div class="points-section" style="padding-bottom:8px;">
-      <div class="point-card" id="cardA">
-        <button class="point-btn btn-a" id="btnA" onclick="setPointA()">Set Point A</button>
-        <div class="point-info">
-          <div class="point-label">Starting Point</div>
-          <div class="point-coords" id="aCoords">—</div>
-          <div class="point-acc" id="aAcc"></div>
-        </div>
-      </div>
+    <!-- Mode selector -->
+    <div style="display:flex; gap:8px; padding:8px 12px 4px; flex-shrink:0;">
+      <button id="modeBtnP2P" onclick="setMeasureMode('p2p')" style="
+        flex:1; padding:9px; border-radius:10px; font-family:var(--mono);
+        font-size:11px; font-weight:600; letter-spacing:1px; cursor:pointer;
+        -webkit-tap-highlight-color:transparent;
+        background:rgba(0,229,255,0.12); border:1.5px solid rgba(0,229,255,0.4); color:var(--accent);">
+        POINT TO POINT
+      </button>
+      <button id="modeBtnRoute" onclick="setMeasureMode('route')" style="
+        flex:1; padding:9px; border-radius:10px; font-family:var(--mono);
+        font-size:11px; font-weight:600; letter-spacing:1px; cursor:pointer;
+        -webkit-tap-highlight-color:transparent;
+        background:transparent; border:1px solid var(--border); color:var(--dim);">
+        ROUTE
+      </button>
     </div>
 
     <!-- Keep Awake -->
-    <div style="padding:0 12px 4px; text-align:left;">
+    <div style="padding:2px 12px 4px; text-align:left; flex-shrink:0;">
       <button id="wakeLockToggleMeasure" onclick="toggleWakeLock()" style="
         font-family:var(--mono); font-size:11px; padding:5px 12px;
         border-radius:8px; border:1px solid var(--border);
@@ -1039,41 +1045,115 @@ html, body {
         -webkit-tap-highlight-color:transparent;">Keep Awake</button>
     </div>
 
-    <!-- Distance hero in the middle -->
-    <div class="hero">
-      <div class="hero-ring" style="width:160px;height:160px;"></div>
-      <div class="hero-ring" style="width:110px;height:110px;"></div>
-      <div class="distance-number zero" id="distNum">0</div>
-      <div class="unit-row">
-        <button class="unit-chip active" id="chipYd" onclick="setUnit('yd')">YD</button>
-        <button class="unit-chip"        id="chipFt" onclick="setUnit('ft')">FT</button>
-        <button class="unit-chip"        id="chipMi" onclick="setUnit('mi')">MI</button>
-        <button class="unit-chip"        id="chipM"  onclick="setUnit('m')">M</button>
-        <button class="unit-chip"        id="chipKm" onclick="setUnit('km')">KM</button>
-      </div>
-      <div class="hero-status" id="heroStatus">Tap Set Point A to begin</div>
-    </div>
+    <!-- ── POINT TO POINT layout ── -->
+    <div id="layoutP2P" style="display:flex; flex-direction:column; flex:1; min-height:0;">
 
-    <!-- Point B at bottom -->
-    <div class="points-section" style="padding-top:8px;">
-      <div class="point-card" id="cardB">
-        <button class="point-btn btn-b" id="btnB" onclick="setPointB()" disabled>Set Point B</button>
-        <div class="point-info">
-          <div class="point-label">Destination</div>
-          <div class="point-coords" id="bCoords">Move and tap to lock</div>
-          <div class="point-acc" id="bAcc"></div>
+      <!-- Point A -->
+      <div class="points-section" style="padding-bottom:8px;">
+        <div class="point-card" id="cardA">
+          <button class="point-btn btn-a" id="btnA" onclick="setPointA()">Set Point A</button>
+          <div class="point-info">
+            <div class="point-label">Starting Point</div>
+            <div class="point-coords" id="aCoords">—</div>
+            <div class="point-acc" id="aAcc"></div>
+          </div>
         </div>
       </div>
+
+      <!-- Distance hero -->
+      <div class="hero">
+        <div class="hero-ring" style="width:160px;height:160px;"></div>
+        <div class="hero-ring" style="width:110px;height:110px;"></div>
+        <div class="distance-number zero" id="distNum">0</div>
+        <div class="unit-row">
+          <button class="unit-chip active" id="chipYd" onclick="setUnit('yd')">YD</button>
+          <button class="unit-chip"        id="chipFt" onclick="setUnit('ft')">FT</button>
+          <button class="unit-chip"        id="chipMi" onclick="setUnit('mi')">MI</button>
+          <button class="unit-chip"        id="chipM"  onclick="setUnit('m')">M</button>
+          <button class="unit-chip"        id="chipKm" onclick="setUnit('km')">KM</button>
+        </div>
+        <div class="hero-status" id="heroStatus">Tap Set Point A to begin</div>
+      </div>
+
+      <!-- Point B -->
+      <div class="points-section" style="padding-top:8px;">
+        <div class="point-card" id="cardB">
+          <button class="point-btn btn-b" id="btnB" onclick="setPointB()" disabled>Set Point B</button>
+          <div class="point-info">
+            <div class="point-label">Destination</div>
+            <div class="point-coords" id="bCoords">Move and tap to lock</div>
+            <div class="point-acc" id="bAcc"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Speed toggle -->
+      <div class="speed-toggle-row">
+        <button class="speed-toggle-btn" id="speedToggleBtn" onclick="cycleSpeed()">⚡ Fast Lock</button>
+        <div class="speed-toggle-msg" id="speedToggleMsg"></div>
+      </div>
+
+      <div class="reset-row">
+        <button class="reset-btn" onclick="resetAll()">↺ Reset</button>
+      </div>
+
     </div>
 
-    <!-- Speed toggle -->
-    <div class="speed-toggle-row">
-      <button class="speed-toggle-btn" id="speedToggleBtn" onclick="cycleSpeed()">⚡ Fast Lock</button>
-      <div class="speed-toggle-msg" id="speedToggleMsg"></div>
-    </div>
+    <!-- ── ROUTE layout ── -->
+    <div id="layoutRoute" style="display:none; flex-direction:column; flex:1; min-height:0;">
 
-    <div class="reset-row">
-      <button class="reset-btn" onclick="resetAll()">↺ Reset</button>
+      <!-- Start button (top) -->
+      <div class="points-section" style="padding-bottom:8px;">
+        <div class="point-card" id="routeCardA">
+          <button class="point-btn btn-a" id="routeBtnStart" onclick="routeStart()">Start</button>
+          <div class="point-info">
+            <div class="point-label">Starting Point</div>
+            <div class="point-coords" id="routeStartCoords">—</div>
+            <div class="point-acc" id="routeStartAcc"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Distance hero (shared display) -->
+      <div class="hero">
+        <div class="hero-ring" style="width:160px;height:160px;"></div>
+        <div class="hero-ring" style="width:110px;height:110px;"></div>
+        <div class="distance-number zero" id="routeDistNum">0</div>
+        <div class="unit-row">
+          <button class="unit-chip active" id="rChipYd" onclick="setUnit('yd');updateRouteDisplay()">YD</button>
+          <button class="unit-chip"        id="rChipFt" onclick="setUnit('ft');updateRouteDisplay()">FT</button>
+          <button class="unit-chip"        id="rChipMi" onclick="setUnit('mi');updateRouteDisplay()">MI</button>
+          <button class="unit-chip"        id="rChipM"  onclick="setUnit('m');updateRouteDisplay()">M</button>
+          <button class="unit-chip"        id="rChipKm" onclick="setUnit('km');updateRouteDisplay()">KM</button>
+        </div>
+        <div class="hero-status" id="routeStatus">Tap Start to begin tracing</div>
+      </div>
+
+      <!-- Stop / Pause buttons (bottom) -->
+      <div class="points-section" style="padding-top:8px;">
+        <div class="point-card" id="routeCardB">
+          <button class="point-btn btn-b" id="routeBtnStop" onclick="routeStop()" disabled>Stop &amp; Save</button>
+          <div class="point-info">
+            <div class="point-label">End Point</div>
+            <div class="point-coords" id="routeStopCoords">Walk, then tap to save</div>
+            <div class="point-acc" id="routeStopAcc"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Pause + Reset row -->
+      <div class="speed-toggle-row" style="display:flex; align-items:center; gap:8px;">
+        <button id="routePauseBtn" onclick="routePause()" disabled style="
+          padding:8px 18px; border-radius:10px; font-family:var(--sans); font-size:13px; font-weight:600;
+          background:rgba(255,255,255,0.06); border:1px solid var(--border);
+          color:var(--dim); cursor:pointer; -webkit-tap-highlight-color:transparent;">⏸ Pause</button>
+        <div id="routePointCount" style="font-family:var(--mono); font-size:11px; color:var(--dim); flex:1; text-align:center;"></div>
+      </div>
+
+      <div class="reset-row">
+        <button class="reset-btn" onclick="resetRoute()">↺ Reset</button>
+      </div>
+
     </div>
 
   </div>
@@ -1331,7 +1411,7 @@ html, body {
 
       <div style="text-align:center; padding: 16px 0 8px; font-family:'DM Mono',monospace; font-size:9px; color:#666; letter-spacing:2px;">
         DIST TRKR · GPS · DISTANCE · TRACKER<br>
-        <span style="color:#777; font-size:11px; letter-spacing:1px;">v1.8</span>
+        <span style="color:#777; font-size:11px; letter-spacing:1px;">v1.9.1</span>
       </div>
 
     </div>
@@ -1835,7 +1915,9 @@ function addLogRow(entry) {
     <div class="log-num">#${String(entry.id).padStart(2,'0')}</div>
     <div class="log-info">
       <div class="log-name">${entry.name}</div>
-      <div class="log-meta">${entry.date} · ${entry.time}</div>
+      <div class="log-meta">
+        <span style="font-family:var(--mono);font-size:9px;letter-spacing:1px;padding:1px 5px;border-radius:4px;margin-right:5px;${entry.type==='route' ? 'background:rgba(255,190,0,0.15);color:#ffbe00;border:1px solid rgba(255,190,0,0.3);' : 'background:rgba(0,229,255,0.1);color:var(--accent);border:1px solid rgba(0,229,255,0.2);'}">${entry.type==='route' ? 'ROUTE' : 'POINT TO POINT'}</span>${entry.date} · ${entry.time}
+      </div>
     </div>
     <div class="log-dist-wrap">
       <div class="log-dist">${fmt(entry.meters)}</div>
@@ -1916,7 +1998,9 @@ function rebuildLog() {
       <div class="log-num">#${String(entry.id).padStart(2,'0')}</div>
       <div class="log-info">
         <div class="log-name">${entry.name}</div>
-        <div class="log-meta">${entry.date} · ${entry.time}</div>
+        <div class="log-meta">
+          <span style="font-family:var(--mono);font-size:9px;letter-spacing:1px;padding:1px 5px;border-radius:4px;margin-right:5px;${entry.type==='route' ? 'background:rgba(255,190,0,0.15);color:#ffbe00;border:1px solid rgba(255,190,0,0.3);' : 'background:rgba(0,229,255,0.1);color:var(--accent);border:1px solid rgba(0,229,255,0.2);'}">${entry.type==='route' ? 'ROUTE' : 'POINT TO POINT'}</span>${entry.date} · ${entry.time}
+        </div>
       </div>
       <div class="log-dist-wrap">
         <div class="log-dist">${fmt(entry.meters)}</div>
@@ -1979,47 +2063,69 @@ function openDetail(id) {
   document.getElementById('detailUnit').textContent = unitLabels[unit];
   document.getElementById('detailDate').textContent = m.date + ' · ' + m.time;
 
-  // Build cards
   const cards = document.getElementById('detailCards');
-  const altA = m.pointA.alt !== null ? (m.pointA.alt*3.28084).toFixed(0)+' ft' : 'N/A';
-  const altB = m.pointB.alt !== null ? (m.pointB.alt*3.28084).toFixed(0)+' ft' : 'N/A';
 
-  let elevHtml = '';
-  if (m.pointA.alt !== null && m.pointB.alt !== null) {
-    const df = ((m.pointB.alt - m.pointA.alt)*3.28084).toFixed(0);
-    const cls = df > 0 ? 'elev-up' : df < 0 ? 'elev-down' : 'elev-flat';
-    const arrow = df > 0 ? '▲' : df < 0 ? '▼' : '—';
-    const sign  = df > 0 ? '+' : '';
-    elevHtml = `<div class="elev-row ${cls}"><span class="elev-arrow">${arrow}</span><span class="elev-val">${sign}${df} ft</span><span class="elev-label">elevation change</span></div>`;
+  if (m.type === 'route') {
+    // Route detail view
+    cards.innerHTML = `
+      <div class="detail-card">
+        <div class="detail-card-label">Route</div>
+        <div class="detail-row"><span class="detail-key">Total Distance</span><span class="detail-val">${metersTo(m.meters,'yd').toFixed(1)} yd</span></div>
+        <div class="detail-row"><span class="detail-key">Meters</span><span class="detail-val">${m.meters.toFixed(1)}</span></div>
+        <div class="detail-row"><span class="detail-key">Miles</span><span class="detail-val">${metersTo(m.meters,'mi').toFixed(4)}</span></div>
+        <div class="detail-row"><span class="detail-key">GPS Points</span><span class="detail-val">${m.points.length}</span></div>
+      </div>
+      <div class="detail-card">
+        <div class="detail-card-label">Start Point</div>
+        <div class="detail-row"><span class="detail-key">Latitude</span><span class="detail-val">${m.points[0].lat.toFixed(6)}</span></div>
+        <div class="detail-row"><span class="detail-key">Longitude</span><span class="detail-val">${m.points[0].lon.toFixed(6)}</span></div>
+      </div>
+      <div class="detail-card">
+        <div class="detail-card-label">End Point</div>
+        <div class="detail-row"><span class="detail-key">Latitude</span><span class="detail-val">${m.points[m.points.length-1].lat.toFixed(6)}</span></div>
+        <div class="detail-row"><span class="detail-key">Longitude</span><span class="detail-val">${m.points[m.points.length-1].lon.toFixed(6)}</span></div>
+      </div>`;
+  } else {
+    // Point to point detail view
+    const altA = m.pointA.alt !== null ? (m.pointA.alt*3.28084).toFixed(0)+' ft' : 'N/A';
+    const altB = m.pointB.alt !== null ? (m.pointB.alt*3.28084).toFixed(0)+' ft' : 'N/A';
+
+    let elevHtml = '';
+    if (m.pointA.alt !== null && m.pointB.alt !== null) {
+      const df = ((m.pointB.alt - m.pointA.alt)*3.28084).toFixed(0);
+      const cls = df > 0 ? 'elev-up' : df < 0 ? 'elev-down' : 'elev-flat';
+      const arrow = df > 0 ? '▲' : df < 0 ? '▼' : '—';
+      const sign  = df > 0 ? '+' : '';
+      elevHtml = `<div class="elev-row ${cls}"><span class="elev-arrow">${arrow}</span><span class="elev-val">${sign}${df} ft</span><span class="elev-label">elevation change</span></div>`;
+    }
+
+    cards.innerHTML = `
+      <div class="detail-card">
+        <div class="detail-card-label">Distance</div>
+        <div class="detail-row"><span class="detail-key">Yards</span><span class="detail-val">${metersTo(m.meters,'yd').toFixed(1)}</span></div>
+        <div class="detail-row"><span class="detail-key">Feet</span><span class="detail-val">${metersTo(m.meters,'ft').toFixed(0)}</span></div>
+        <div class="detail-row"><span class="detail-key">Miles</span><span class="detail-val">${metersTo(m.meters,'mi').toFixed(4)}</span></div>
+        <div class="detail-row"><span class="detail-key">Meters</span><span class="detail-val">${m.meters.toFixed(1)}</span></div>
+      </div>
+      <div class="detail-card">
+        <div class="detail-card-label">Point A</div>
+        <div class="detail-row"><span class="detail-key">Latitude</span><span class="detail-val">${m.pointA.lat.toFixed(6)}</span></div>
+        <div class="detail-row"><span class="detail-key">Longitude</span><span class="detail-val">${m.pointA.lon.toFixed(6)}</span></div>
+        <div class="detail-row"><span class="detail-key">Elevation</span><span class="detail-val">${altA}</span></div>
+      </div>
+      <div class="detail-card">
+        <div class="detail-card-label">Point B</div>
+        <div class="detail-row"><span class="detail-key">Latitude</span><span class="detail-val">${m.pointB.lat.toFixed(6)}</span></div>
+        <div class="detail-row"><span class="detail-key">Longitude</span><span class="detail-val">${m.pointB.lon.toFixed(6)}</span></div>
+        <div class="detail-row"><span class="detail-key">Elevation</span><span class="detail-val">${altB}</span></div>
+        ${elevHtml}
+      </div>
+      <div class="detail-card">
+        <div class="detail-card-label">Accuracy</div>
+        <div class="detail-row"><span class="detail-key">GPS Accuracy</span><span class="detail-val">±${Math.round(m.pointB.acc*3.28084)} ft</span></div>
+        <div class="detail-row"><span class="detail-key">Samples averaged</span><span class="detail-val">${m.pointB.n}</span></div>
+      </div>`;
   }
-
-  cards.innerHTML = `
-    <div class="detail-card">
-      <div class="detail-card-label">Distance</div>
-      <div class="detail-row"><span class="detail-key">Yards</span><span class="detail-val">${metersTo(m.meters,'yd').toFixed(1)}</span></div>
-      <div class="detail-row"><span class="detail-key">Feet</span><span class="detail-val">${metersTo(m.meters,'ft').toFixed(0)}</span></div>
-      <div class="detail-row"><span class="detail-key">Miles</span><span class="detail-val">${metersTo(m.meters,'mi').toFixed(4)}</span></div>
-      <div class="detail-row"><span class="detail-key">Feet</span><span class="detail-val">${(m.meters*3.28084).toFixed(0)}</span></div>
-      <div class="detail-row"><span class="detail-key">Meters</span><span class="detail-val">${m.meters.toFixed(1)}</span></div>
-    </div>
-    <div class="detail-card">
-      <div class="detail-card-label">Point A</div>
-      <div class="detail-row"><span class="detail-key">Latitude</span><span class="detail-val">${m.pointA.lat.toFixed(6)}</span></div>
-      <div class="detail-row"><span class="detail-key">Longitude</span><span class="detail-val">${m.pointA.lon.toFixed(6)}</span></div>
-      <div class="detail-row"><span class="detail-key">Elevation</span><span class="detail-val">${altA}</span></div>
-    </div>
-    <div class="detail-card">
-      <div class="detail-card-label">Point B</div>
-      <div class="detail-row"><span class="detail-key">Latitude</span><span class="detail-val">${m.pointB.lat.toFixed(6)}</span></div>
-      <div class="detail-row"><span class="detail-key">Longitude</span><span class="detail-val">${m.pointB.lon.toFixed(6)}</span></div>
-      <div class="detail-row"><span class="detail-key">Elevation</span><span class="detail-val">${altB}</span></div>
-      ${elevHtml}
-    </div>
-    <div class="detail-card">
-      <div class="detail-card-label">Accuracy</div>
-      <div class="detail-row"><span class="detail-key">GPS Accuracy</span><span class="detail-val">±${Math.round(m.pointB.acc*3.28084)} ft</span></div>
-      <div class="detail-row"><span class="detail-key">Samples averaged</span><span class="detail-val">${m.pointB.n}</span></div>
-    </div>`;
 
   showScreen('detail');
 }
@@ -2209,15 +2315,9 @@ function openMap() {
 
     leafletMap = L.map(container, { zoomControl: true, attributionControl: true });
 
-    // Apply saved layer preference
     const layer = tileLayers[currentMapLayer];
     currentTileLayer = L.tileLayer(layer.url, layer.options).addTo(leafletMap);
-
-    // Reset button styles to match current layer
     setMapLayer(currentMapLayer);
-
-    const latA = m.pointA.lat, lonA = m.pointA.lon;
-    const latB = m.pointB.lat, lonB = m.pointB.lon;
 
     const iconA = L.divIcon({
       className: '',
@@ -2230,17 +2330,42 @@ function openMap() {
       iconSize: [14,14], iconAnchor: [7,7],
     });
 
-    L.marker([latA, lonA], {icon: iconA}).addTo(leafletMap)
-      .bindTooltip('Point A', {permanent:true, direction:'top', offset:[0,-10]});
-    L.marker([latB, lonB], {icon: iconB}).addTo(leafletMap)
-      .bindTooltip('Point B', {permanent:true, direction:'top', offset:[0,-10]});
+    if (m.type === 'route') {
+      // Draw route as connected polyline
+      const latlngs = m.points.map(p => [p.lat, p.lon]);
 
-    L.polyline([[latA,lonA],[latB,lonB]], {
-      color:'#00e5ff', weight:2.5, opacity:0.7, dashArray:'6,6'
-    }).addTo(leafletMap);
+      L.polyline(latlngs, {
+        color:'#ffbe00', weight:3, opacity:0.85
+      }).addTo(leafletMap);
 
-    const bounds = L.latLngBounds([[latA,lonA],[latB,lonB]]);
-    leafletMap.fitBounds(bounds, {padding:[60,60]});
+      // Start marker (cyan)
+      L.marker(latlngs[0], {icon: iconA}).addTo(leafletMap)
+        .bindTooltip('Start', {permanent:true, direction:'top', offset:[0,-10]});
+
+      // End marker (green)
+      L.marker(latlngs[latlngs.length-1], {icon: iconB}).addTo(leafletMap)
+        .bindTooltip('End', {permanent:true, direction:'top', offset:[0,-10]});
+
+      const bounds = L.latLngBounds(latlngs);
+      leafletMap.fitBounds(bounds, {padding:[60,60]});
+
+    } else {
+      // Point to point
+      const latA = m.pointA.lat, lonA = m.pointA.lon;
+      const latB = m.pointB.lat, lonB = m.pointB.lon;
+
+      L.marker([latA, lonA], {icon: iconA}).addTo(leafletMap)
+        .bindTooltip('Point A', {permanent:true, direction:'top', offset:[0,-10]});
+      L.marker([latB, lonB], {icon: iconB}).addTo(leafletMap)
+        .bindTooltip('Point B', {permanent:true, direction:'top', offset:[0,-10]});
+
+      L.polyline([[latA,lonA],[latB,lonB]], {
+        color:'#00e5ff', weight:2.5, opacity:0.7, dashArray:'6,6'
+      }).addTo(leafletMap);
+
+      const bounds = L.latLngBounds([[latA,lonA],[latB,lonB]]);
+      leafletMap.fitBounds(bounds, {padding:[60,60]});
+    }
 
   }, 150);
 }
@@ -2655,8 +2780,304 @@ const _origToggleWakeLock = toggleWakeLock;
 document.addEventListener('touchstart', () => { if (wakeLockEnabled) resetDimTimer(); }, {passive:true});
 document.addEventListener('click', () => { if (wakeLockEnabled) resetDimTimer(); }, {passive:true});
 
+
+
+// ── MEASURE MODE ────────────────────────────────────
+
+let measureMode = 'p2p'; // 'p2p' or 'route'
+
+function setMeasureMode(mode) {
+  measureMode = mode;
+  localStorage.setItem('disttrkr_mode', mode);
+
+  const p2p   = document.getElementById('layoutP2P');
+  const route = document.getElementById('layoutRoute');
+  const btnP2P   = document.getElementById('modeBtnP2P');
+  const btnRoute = document.getElementById('modeBtnRoute');
+
+  if (mode === 'p2p') {
+    p2p.style.display   = 'flex';
+    route.style.display = 'none';
+    btnP2P.style.background   = 'rgba(0,229,255,0.12)';
+    btnP2P.style.border       = '1.5px solid rgba(0,229,255,0.4)';
+    btnP2P.style.color        = 'var(--accent)';
+    btnRoute.style.background = 'transparent';
+    btnRoute.style.border     = '1px solid var(--border)';
+    btnRoute.style.color      = 'var(--dim)';
+  } else {
+    p2p.style.display   = 'none';
+    route.style.display = 'flex';
+    btnRoute.style.background = 'rgba(255,190,0,0.12)';
+    btnRoute.style.border     = '1.5px solid rgba(255,190,0,0.4)';
+    btnRoute.style.color      = '#ffbe00';
+    btnP2P.style.background   = 'transparent';
+    btnP2P.style.border       = '1px solid var(--border)';
+    btnP2P.style.color        = 'var(--dim)';
+    // Restore active trace if one was in progress
+    restoreTraceState();
+    syncRouteUnitChips();
+  }
+}
+
+function initMeasureMode() {
+  const saved = localStorage.getItem('disttrkr_mode') || 'p2p';
+  setMeasureMode(saved);
+}
+
+// Keep route unit chips in sync with main unit
+function syncRouteUnitChips() {
+  ['Yd','Ft','Mi','M','Km'].forEach(u => {
+    const chip = document.getElementById('rChip' + u);
+    if (chip) chip.className = 'unit-chip' + (unit === u.toLowerCase() ? ' active' : '');
+  });
+}
+
+// ── ROUTE TRACING ──────────────────────────────────
+
+let traceActive   = false;
+let tracePaused   = false;
+let tracePoints   = [];
+let traceMeters   = 0;
+let traceWatchId  = null;
+let traceLastPos  = null;
+const TRACE_MIN_DIST = 5; // meters
+
+function routeStart() {
+  if (!navigator.geolocation) {
+    setRouteStatus('GPS not supported.', null);
+    return;
+  }
+
+  if (traceActive) {
+    // Re-tapping Start while active — ignore
+    return;
+  }
+
+  traceActive  = true;
+  tracePaused  = false;
+  tracePoints  = [];
+  traceMeters  = 0;
+  traceLastPos = null;
+
+  saveTraceState();
+
+  const btnStart = document.getElementById('routeBtnStart');
+  const btnStop  = document.getElementById('routeBtnStop');
+  const btnPause = document.getElementById('routePauseBtn');
+
+  btnStart.textContent = 'Started ✓';
+  btnStart.className   = 'point-btn btn-a-done';
+  btnStart.disabled    = true;
+  btnStop.disabled     = false;
+  btnPause.disabled    = false;
+
+  setRouteStatus('Tracing… waiting for GPS', null);
+
+  traceWatchId = navigator.geolocation.watchPosition(
+    pos => {
+      if (tracePaused) return;
+      const p = {lat: pos.coords.latitude, lon: pos.coords.longitude, alt: pos.coords.altitude, acc: pos.coords.accuracy};
+
+      if (traceLastPos) {
+        const d = haversine(traceLastPos.lat, traceLastPos.lon, p.lat, p.lon);
+        if (d < TRACE_MIN_DIST) return;
+        traceMeters += d;
+      } else {
+        // First point — show start coords
+        document.getElementById('routeStartCoords').textContent =
+          p.lat.toFixed(5) + ', ' + p.lon.toFixed(5);
+        document.getElementById('routeStartAcc').textContent = '±' + Math.round(p.acc * 3.28084) + ' ft';
+      }
+
+      tracePoints.push(p);
+      traceLastPos = p;
+      saveTraceState();
+      updateRouteDisplay();
+
+      // Update end coords with latest position
+      document.getElementById('routeStopCoords').textContent =
+        p.lat.toFixed(5) + ', ' + p.lon.toFixed(5);
+    },
+    () => {},
+    {enableHighAccuracy: true, maximumAge: 3000}
+  );
+}
+
+function routeStop() {
+  if (traceWatchId !== null) {
+    navigator.geolocation.clearWatch(traceWatchId);
+    traceWatchId = null;
+  }
+
+  traceActive  = false;
+  tracePaused  = false;
+
+  resetRouteButtons();
+  clearTraceState();
+
+  if (tracePoints.length < 2) {
+    setRouteStatus('Need at least 2 points to save.', null);
+    return;
+  }
+
+  // Save entry
+  measureCount++;
+  const now  = new Date();
+  const time = now.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  const date = now.toLocaleDateString([],{month:'short',day:'numeric',year:'numeric'});
+  const name = 'Route ' + measureCount;
+  const entry = {id: measureCount, type: 'route', name, meters: traceMeters, points: tracePoints, time, date};
+
+  measurements.push(entry);
+  saveToStorage();
+  addLogRow(entry);
+  switchTab('log');
+
+  tracePoints  = [];
+  traceMeters  = 0;
+  traceLastPos = null;
+  setRouteStatus('Tap Start to begin tracing', null);
+  document.getElementById('routeDistNum').textContent = '0';
+  document.getElementById('routeDistNum').className = 'distance-number zero';
+  document.getElementById('routeStartCoords').textContent = '—';
+  document.getElementById('routeStopCoords').textContent = 'Walk, then tap to save';
+  document.getElementById('routePointCount').textContent = '';
+}
+
+function routePause() {
+  tracePaused = !tracePaused;
+  const btn = document.getElementById('routePauseBtn');
+  btn.textContent = tracePaused ? '▶ Resume' : '⏸ Pause';
+  btn.style.color = tracePaused ? 'var(--accent)' : 'var(--dim)';
+  setRouteStatus(tracePaused ? 'Paused — tap Resume to continue' : 'Tracing…', null);
+  saveTraceState();
+}
+
+function resetRoute() {
+  if (traceActive) {
+    if (!confirm('Discard current route?')) return;
+    if (traceWatchId !== null) { navigator.geolocation.clearWatch(traceWatchId); traceWatchId = null; }
+    traceActive = false;
+    tracePaused = false;
+  }
+  tracePoints  = [];
+  traceMeters  = 0;
+  traceLastPos = null;
+  clearTraceState();
+  resetRouteButtons();
+  document.getElementById('routeDistNum').textContent = '0';
+  document.getElementById('routeDistNum').className = 'distance-number zero';
+  document.getElementById('routeStartCoords').textContent = '—';
+  document.getElementById('routeStopCoords').textContent = 'Walk, then tap to save';
+  document.getElementById('routePointCount').textContent = '';
+  setRouteStatus('Tap Start to begin tracing', null);
+}
+
+function resetRouteButtons() {
+  const btnStart = document.getElementById('routeBtnStart');
+  const btnStop  = document.getElementById('routeBtnStop');
+  const btnPause = document.getElementById('routePauseBtn');
+  btnStart.textContent = 'Start';
+  btnStart.className   = 'point-btn btn-a';
+  btnStart.disabled    = false;
+  btnStop.disabled     = true;
+  btnPause.disabled    = true;
+  btnPause.textContent = '⏸ Pause';
+  btnPause.style.color = 'var(--dim)';
+}
+
+function setRouteStatus(msg, type) {
+  const el = document.getElementById('routeStatus');
+  el.textContent = msg;
+}
+
+function updateRouteDisplay() {
+  const el = document.getElementById('routeDistNum');
+  const val = fmt(traceMeters);
+  el.textContent = val;
+  el.className = 'distance-number' + (traceMeters === 0 ? ' zero' : '');
+  document.getElementById('routePointCount').textContent =
+    tracePoints.length + ' GPS pts';
+  syncRouteUnitChips();
+}
+
+// ── TRACE STATE PERSISTENCE ────────────────────────
+
+function saveTraceState() {
+  const state = {active: traceActive, paused: tracePaused, points: tracePoints, meters: traceMeters};
+  localStorage.setItem('disttrkr_trace', JSON.stringify(state));
+}
+
+function clearTraceState() {
+  localStorage.removeItem('disttrkr_trace');
+}
+
+function restoreTraceState() {
+  const raw = localStorage.getItem('disttrkr_trace');
+  if (!raw) return;
+  try {
+    const state = JSON.parse(raw);
+    if (!state.active || !state.points || state.points.length < 1) return;
+
+    tracePoints  = state.points;
+    traceMeters  = state.meters;
+    tracePaused  = state.paused || false;
+    traceLastPos = tracePoints[tracePoints.length - 1];
+
+    // Restore UI
+    const btnStart = document.getElementById('routeBtnStart');
+    const btnStop  = document.getElementById('routeBtnStop');
+    const btnPause = document.getElementById('routePauseBtn');
+
+    btnStart.textContent = 'Started ✓';
+    btnStart.className   = 'point-btn btn-a-done';
+    btnStart.disabled    = true;
+    btnStop.disabled     = false;
+    btnPause.disabled    = false;
+    btnPause.textContent = tracePaused ? '▶ Resume' : '⏸ Pause';
+    btnPause.style.color = tracePaused ? 'var(--accent)' : 'var(--dim)';
+
+    document.getElementById('routeStartCoords').textContent =
+      tracePoints[0].lat.toFixed(5) + ', ' + tracePoints[0].lon.toFixed(5);
+    document.getElementById('routeStopCoords').textContent =
+      traceLastPos.lat.toFixed(5) + ', ' + traceLastPos.lon.toFixed(5);
+
+    updateRouteDisplay();
+    setRouteStatus(tracePaused ? 'Paused — tap Resume to continue' : 'Route restored — still tracing…', null);
+
+    // Resume watch if not paused
+    if (!tracePaused) {
+      traceActive = true;
+      traceWatchId = navigator.geolocation.watchPosition(
+        pos => {
+          if (tracePaused) return;
+          const p = {lat: pos.coords.latitude, lon: pos.coords.longitude, alt: pos.coords.altitude, acc: pos.coords.accuracy};
+          if (traceLastPos) {
+            const d = haversine(traceLastPos.lat, traceLastPos.lon, p.lat, p.lon);
+            if (d < TRACE_MIN_DIST) return;
+            traceMeters += d;
+          }
+          tracePoints.push(p);
+          traceLastPos = p;
+          saveTraceState();
+          updateRouteDisplay();
+          document.getElementById('routeStopCoords').textContent =
+            p.lat.toFixed(5) + ', ' + p.lon.toFixed(5);
+        },
+        () => {},
+        {enableHighAccuracy: true, maximumAge: 3000}
+      );
+    } else {
+      traceActive = true;
+    }
+  } catch(e) {
+    clearTraceState();
+  }
+}
+
 loadFromStorage();
 initSpeed();
+initMeasureMode();
 checkWelcome();
 </script>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
