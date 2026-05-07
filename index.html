@@ -1489,7 +1489,7 @@ html, body {
 
       <div style="text-align:center; padding: 16px 0 8px; font-family:'DM Mono',monospace; font-size:9px; color:#666; letter-spacing:2px;">
         DIST TRKR · GPS · DISTANCE · TRACKER<br>
-        <span style="color:#777; font-size:11px; letter-spacing:1px;">v1.9.14</span>
+        <span style="color:#777; font-size:11px; letter-spacing:1px;">v1.9.15</span>
       </div>
 
     </div>
@@ -2780,20 +2780,47 @@ function updateGolfDistances() {
     }));
     teesWithDist.sort((a, b) => b.distToGreen - a.distToGreen);
 
+    const TEE_COLORS = {
+      black:  { bg: 'rgba(255,255,255,0.06)', border: 'rgba(255,255,255,0.25)', text: '#e0e0e0' },
+      blue:   { bg: 'rgba(30,100,255,0.15)',  border: 'rgba(30,100,255,0.5)',   text: '#6aa3ff' },
+      white:  { bg: 'rgba(255,255,255,0.08)', border: 'rgba(255,255,255,0.4)',  text: '#ffffff' },
+      red:    { bg: 'rgba(255,60,60,0.12)',   border: 'rgba(255,60,60,0.4)',    text: '#ff6b6b' },
+      yellow: { bg: 'rgba(255,210,0,0.12)',   border: 'rgba(255,210,0,0.4)',    text: '#ffd600' },
+      green:  { bg: 'rgba(57,255,20,0.1)',    border: 'rgba(57,255,20,0.4)',    text: '#39ff14' },
+      gold:   { bg: 'rgba(255,180,0,0.12)',   border: 'rgba(255,180,0,0.4)',    text: '#ffb800' },
+    };
+
     teeItems.innerHTML = teesWithDist.map((t, idx) => {
       const isBack    = idx === 0;
       const isForward = idx === teesWithDist.length - 1 && teesWithDist.length > 1;
       const holeYds   = toGolfUnit(t.distToGreen);
-      const label     = isBack ? `Back — ${holeYds} ${golfUnitLabel()}` :
-                        isForward ? 'Forward' :
-                        `${holeYds} ${golfUnitLabel()}`;
-      const textColor = isBack ? 'var(--text)' : isForward ? 'var(--accent)' : 'var(--dim)';
-      const borderColor = isBack ? 'rgba(255,255,255,0.2)' : isForward ? 'rgba(0,229,255,0.25)' : 'var(--border)';
+      const colorKey  = t.label ? t.label.toLowerCase() : null;
+      const hasColor  = colorKey && TEE_COLORS[colorKey];
+
+      // Label: color name if available, else Back/Forward/yds
+      let label;
+      if (hasColor) {
+        const colorName = t.label.charAt(0).toUpperCase() + t.label.slice(1);
+        label = `${colorName} — ${holeYds} ${golfUnitLabel()}`;
+      } else if (isBack) {
+        label = `Back — ${holeYds} ${golfUnitLabel()}`;
+      } else if (isForward) {
+        label = `Forward — ${holeYds} ${golfUnitLabel()}`;
+      } else {
+        label = `${holeYds} ${golfUnitLabel()} to hole`;
+      }
+
+      const c = hasColor ? TEE_COLORS[colorKey] : {
+        bg: 'var(--panel)',
+        border: isBack ? 'rgba(255,255,255,0.2)' : isForward ? 'rgba(0,229,255,0.25)' : 'var(--border)',
+        text: isBack ? 'var(--text)' : isForward ? 'var(--accent)' : 'var(--dim)'
+      };
+
       return `<div style="display:flex; justify-content:space-between; align-items:center;
-                padding:8px 12px; background:var(--panel); border:1px solid ${borderColor};
+                padding:8px 12px; background:${c.bg}; border:1px solid ${c.border};
                 border-radius:10px;">
-        <span style="font-family:var(--mono); font-size:11px; color:${textColor}; letter-spacing:1px;">${label}</span>
-        <span style="font-family:var(--display); font-size:18px; font-weight:800; color:${textColor};">
+        <span style="font-family:var(--mono); font-size:11px; color:${c.text}; letter-spacing:1px;">${label}</span>
+        <span style="font-family:var(--display); font-size:18px; font-weight:800; color:${c.text};">
           ${toGolfUnit(t.d)} <span style="font-family:var(--mono); font-size:10px;">${golfUnitLabel()}</span>
         </span>
       </div>`;
