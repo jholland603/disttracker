@@ -1504,7 +1504,7 @@ html, body {
 
       <div style="text-align:center; padding: 16px 0 8px; font-family:'DM Mono',monospace; font-size:9px; color:#666; letter-spacing:2px;">
         DIST TRKR · GPS · DISTANCE · TRACKER<br>
-        <span style="color:#777; font-size:11px; letter-spacing:1px;">v1.9.20</span>
+        <span style="color:#777; font-size:11px; letter-spacing:1px;">v1.9.21</span>
       </div>
 
     </div>
@@ -3194,7 +3194,7 @@ let tracePoints   = [];
 let traceMeters   = 0;
 let traceWatchId  = null;
 let traceLastPos  = null;
-const TRACE_MIN_DIST = 10; // meters
+const TRACE_MIN_DIST = 5; // meters
 
 function routeStart() {
   if (!navigator.geolocation) {
@@ -3224,6 +3224,11 @@ function routeStart() {
   btnStart.disabled    = true;
   btnStop.disabled     = false;
   btnPause.disabled    = false;
+
+  // Light up green at 0 immediately, like P2P does
+  const distEl = document.getElementById('routeDistNum');
+  distEl.textContent = '0';
+  distEl.className = 'distance-number live';
 
   setRouteStatus('Tracing… waiting for GPS', null);
 
@@ -3352,7 +3357,11 @@ function updateRouteDisplay() {
   const el = document.getElementById('routeDistNum');
   const val = fmt(traceMeters);
   el.textContent = val;
-  el.className = 'distance-number' + (traceMeters === 0 ? ' zero' : '');
+  if (traceMeters === 0) {
+    el.className = traceActive ? 'distance-number live' : 'distance-number zero';
+  } else {
+    el.className = 'distance-number live';
+  }
   document.getElementById('routePointCount').textContent =
     tracePoints.length + ' GPS pts';
   syncRouteUnitChips();
