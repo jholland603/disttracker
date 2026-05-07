@@ -1309,6 +1309,14 @@ html, body {
           -webkit-tap-highlight-color:transparent;">›</button>
       </div>
 
+      <!-- Auto-advance notification -->
+      <div id="golfAdvanceNotice" style="
+        display:none; margin:0 16px 4px; padding:8px 14px; border-radius:10px;
+        background:rgba(57,255,20,0.1); border:1px solid rgba(57,255,20,0.3);
+        font-family:var(--mono); font-size:11px; color:var(--green);
+        text-align:center; letter-spacing:1px; flex-shrink:0;">
+      </div>
+
       <!-- Center distance hero -->
       <div style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:flex-start; text-align:center; padding:4px 12px 16px;">
         <div id="golfParLabel" style="font-family:var(--mono); font-size:11px; color:var(--dim); letter-spacing:2px; margin-bottom:8px;"></div>
@@ -1489,7 +1497,7 @@ html, body {
 
       <div style="text-align:center; padding: 16px 0 8px; font-family:'DM Mono',monospace; font-size:9px; color:#666; letter-spacing:2px;">
         DIST TRKR · GPS · DISTANCE · TRACKER<br>
-        <span style="color:#777; font-size:11px; letter-spacing:1px;">v1.9.15</span>
+        <span style="color:#777; font-size:11px; letter-spacing:1px;">v1.9.17</span>
       </div>
 
     </div>
@@ -2505,17 +2513,81 @@ function golfHaversine(lat1, lon1, lat2, lon2) {
 }
 
 // Start/stop GPS watch for golf tab
+let teeProximityHole  = null;  // hole index we're near
+let teeProximityTimer = null;  // setTimeout handle
+const TEE_PROXIMITY_METERS = 20;
+const TEE_ADVANCE_SECS = 30;
+
 function startGolfGpsWatch() {
   if (!navigator.geolocation) return;
   if (golfWatchId !== null) return;
   golfWatchId = navigator.geolocation.watchPosition(
     pos => {
       golfCurrentPos = {lat: pos.coords.latitude, lon: pos.coords.longitude, acc: pos.coords.accuracy};
-      if (golfHoles.length > 0) updateGolfDistances();
+      if (golfHoles.length > 0) {
+        updateGolfDistances();
+        checkTeeProximity(golfCurrentPos.lat, golfCurrentPos.lon);
+      }
     },
     () => {},
     { enableHighAccuracy: true, maximumAge: 5000 }
   );
+}
+
+function checkTeeProximity(lat, lon) {
+  if (!golfHoles.length) return;
+
+  // Only look at the very next hole — never skip more than one
+  let closestHoleIdx = null;
+  let closestDist = Infinity;
+
+  for (let i = golfCurrentHole + 1; i <= golfCurrentHole + 1 && i < golfHoles.length; i++) {
+    const hole = golfHoles[i];
+    if (!hole.tees || !hole.tees.length) continue;
+    for (const tee of hole.tees) {
+      const d = golfHaversine(lat, lon, tee.lat, tee.lon);
+      if (d < TEE_PROXIMITY_METERS && d < closestDist) {
+        closestDist = d;
+        closestHoleIdx = i;
+      }
+    }
+  }
+
+  if (closestHoleIdx !== null && closestHoleIdx !== teeProximityHole) {
+    // Entered a new tee box — start timer
+    teeProximityHole = closestHoleIdx;
+    clearTimeout(teeProximityTimer);
+    const holeNum = golfHoles[closestHoleIdx].num;
+    showAdvanceNotice(`Moving to hole ${holeNum} in ${TEE_ADVANCE_SECS}s…`);
+    teeProximityTimer = setTimeout(() => {
+      if (teeProximityHole === closestHoleIdx) {
+        golfCurrentHole = closestHoleIdx;
+        saveGolfState();
+        renderHole();
+        showAdvanceNotice(`Now on hole ${golfHoles[golfCurrentHole].num}`, 3000);
+        teeProximityHole = null;
+      }
+    }, TEE_ADVANCE_SECS * 1000);
+  } else if (closestHoleIdx === null && teeProximityHole !== null) {
+    // Left the tee box before timer fired — cancel
+    clearTimeout(teeProximityTimer);
+    teeProximityTimer = null;
+    teeProximityHole = null;
+    hideAdvanceNotice();
+  }
+}
+
+function showAdvanceNotice(msg, autoDismissMs) {
+  const el = document.getElementById('golfAdvanceNotice');
+  if (!el) return;
+  el.textContent = msg;
+  el.style.display = 'block';
+  if (autoDismissMs) setTimeout(() => hideAdvanceNotice(), autoDismissMs);
+}
+
+function hideAdvanceNotice() {
+  const el = document.getElementById('golfAdvanceNotice');
+  if (el) el.style.display = 'none';
 }
 
 function stopGolfGpsWatch() {
@@ -2834,6 +2906,10 @@ function updateGolfDistances() {
 
 function changeHole(dir) {
   golfCurrentHole = (golfCurrentHole + dir + golfHoles.length) % golfHoles.length;
+  clearTimeout(teeProximityTimer);
+  teeProximityTimer = null;
+  teeProximityHole = null;
+  hideAdvanceNotice();
   saveGolfState();
   renderHole();
 }
