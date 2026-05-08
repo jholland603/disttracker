@@ -1661,7 +1661,7 @@ html, body {
 
       <div style="text-align:center; padding: 16px 0 8px; font-family:'DM Mono',monospace; font-size:9px; color:#666; letter-spacing:2px;">
         DIST TRKR · GPS · DISTANCE · TRACKER<br>
-        <span style="color:#777; font-size:11px; letter-spacing:1px;">v1.9.34</span>
+        <span style="color:#777; font-size:11px; letter-spacing:1px;">v1.9.35</span>
       </div>
 
     </div>
@@ -2033,12 +2033,8 @@ function setPointA() {
   stopLive();
   acquiringPoint = true;
 
-  // If re-tapping after Point A already set, just clear pointA —
-  // keep the warmup buffer intact since it's been collecting continuously
-  if (pointA) {
-    pointA = null;
-  }
-  // NOTE: do NOT clear warmupBuffer here — we want to use it!
+  // Clear pointA if re-tapping after a save — keep warmup buffer intact
+  if (pointA) pointA = null;
 
   // Reset display to zero immediately on tap
   const el = document.getElementById('distNum');
@@ -2046,9 +2042,43 @@ function setPointA() {
   el.className = 'distance-number zero';
 
   const btn = document.getElementById('btnA');
+  btn.style.borderColor = '';
+
+  // Try to use warmup buffer directly — avoids full satellite search
+  const profile = SPEED_PROFILES[currentSpeed];
+  const warmupPos = getWarmupPosition(profile.minSamples, profile.maxAccuracy);
+  if (warmupPos) {
+    // Instant lock from buffer
+    btn.textContent = 'Locating…';
+    btn.className = 'point-btn btn-a-loading';
+    btn.disabled = true;
+    document.getElementById('btnB').disabled = true;
+    setStatus('GPS ready (' + warmupPos.n + ' samples buffered)', 'live');
+    setTimeout(() => {
+      pointA = warmupPos;
+      document.getElementById('aCoords').textContent = warmupPos.lat.toFixed(5) + ', ' + warmupPos.lon.toFixed(5);
+      document.getElementById('aCoords').className = 'point-coords set-a';
+      const accEl = document.getElementById('aAcc');
+      accEl.textContent = '±' + Math.round(warmupPos.acc*3.28084) + ' ft · ' + warmupPos.n + ' samples';
+      accEl.className = 'point-acc visible';
+      document.getElementById('cardA').className = 'point-card set-a';
+      btn.textContent = 'Point A ✓';
+      btn.className = 'point-btn btn-a-done';
+      btn.disabled = false;
+      document.getElementById('btnB').disabled = false;
+      acquiringPoint = false;
+      setStatus('Point A set — move to Point B', 'ok');
+      warmupBuffer = [];
+      startWarmup();
+      startLive();
+      saveP2PState();
+    }, 100);
+    return;
+  }
+
+  // Fall back to full acquire if buffer insufficient
   btn.textContent = 'Locating…';
   btn.className = 'point-btn btn-a-loading';
-  btn.style.borderColor = '';
   btn.disabled = true;
   document.getElementById('btnB').disabled = true;
   setStatus('Waiting for GPS signal…', null);
