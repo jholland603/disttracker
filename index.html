@@ -1661,7 +1661,7 @@ html, body {
 
       <div style="text-align:center; padding: 16px 0 8px; font-family:'DM Mono',monospace; font-size:9px; color:#666; letter-spacing:2px;">
         DIST TRKR · GPS · DISTANCE · TRACKER<br>
-        <span style="color:#777; font-size:11px; letter-spacing:1px;">v1.9.36</span>
+        <span style="color:#777; font-size:11px; letter-spacing:1px;">v1.9.37</span>
       </div>
 
     </div>
@@ -1741,8 +1741,8 @@ function cycleSpeed() {
   clearTimeout(msgTimer);
   msgTimer = setTimeout(() => msg.classList.remove('visible'), 3500);
   localStorage.setItem('disttrkr_speed', currentSpeed);
-  // Clear buffer — refill at new accuracy threshold
-  warmupBuffer = [];
+  // Clear P2P buffer — refill at new accuracy threshold
+  p2pWarmupBuffer = [];
 }
 
 function initSpeed() {
@@ -1823,62 +1823,46 @@ function setStatus(msg, state) {
   if (state) el.classList.add(state + '-state');
 }
 
-// ── GPS WARM-UP BUFFER ─────────────────────────────────────
-// Silently collects GPS samples in the background from page load
-// so Set Point A/B can lock in near-instantly
-let warmupWatchId  = null;
-let warmupBuffer   = [];     // rolling buffer of recent good readings
-const WARMUP_MAX   = 20;     // keep last N good readings
+// ── GPS WARM-UP — P2P ──────────────────────────────────────
+let p2pWarmupWatchId = null;
+let p2pWarmupBuffer  = [];
+const WARMUP_MAX = 20;
 
-function getWarmupMaxAcc() {
-  // Use the current speed profile's accuracy threshold for warmup collection
-  return SPEED_PROFILES[currentSpeed].maxAccuracy;
-}
-
-function startWarmup() {
+function startP2PWarmup() {
   if (!gpsReady) return;
   if (!navigator.geolocation) return;
-  if (warmupWatchId !== null) return; // already running
+  if (p2pWarmupWatchId !== null) return;
   setStatus('GPS warming up…', null);
-  warmupWatchId = navigator.geolocation.watchPosition(
+  p2pWarmupWatchId = navigator.geolocation.watchPosition(
     pos => {
-      const maxAcc = getWarmupMaxAcc();
+      const maxAcc = SPEED_PROFILES[currentSpeed].maxAccuracy;
       if (pos.coords.accuracy <= maxAcc) {
-        warmupBuffer.push({
-          lat: pos.coords.latitude,
-          lon: pos.coords.longitude,
-          alt: pos.coords.altitude,
-          acc: pos.coords.accuracy,
-          ts:  Date.now()
+        p2pWarmupBuffer.push({
+          lat: pos.coords.latitude, lon: pos.coords.longitude,
+          alt: pos.coords.altitude, acc: pos.coords.accuracy, ts: Date.now()
         });
-        if (warmupBuffer.length > WARMUP_MAX) warmupBuffer.shift();
-        // Update status and button while warming up
-        if (!pointA && !acquiringPoint) {
-          const profile = SPEED_PROFILES[currentSpeed];
-          const good = warmupBuffer.filter(p => p.acc <= profile.maxAccuracy).length;
-          const btn = document.getElementById('btnA');
-
-          if (good >= profile.minSamples) {
-            if (measureMode === 'p2p') setStatus('GPS ready — tap Set Point A', 'ok');
-            if (btn && btn.textContent !== 'Point A ✓') {
-              btn.textContent = 'Set Point A ✓';
-              btn.className = 'point-btn btn-a';
-              btn.style.borderColor = '';
-              btn.disabled = false;
-            }
-          } else {
-            if (measureMode === 'p2p') setStatus('GPS warming up… ' + good + '/' + profile.minSamples + ' samples', null);
-            if (btn && btn.textContent !== 'Point A ✓') {
-              btn.textContent = 'Set Point A (' + good + '/' + profile.minSamples + ')';
-              btn.className = 'point-btn btn-a-warmup';
-              btn.disabled = true;
-            }
+        if (p2pWarmupBuffer.length > WARMUP_MAX) p2pWarmupBuffer.shift();
+      }
+      if (!pointA && !acquiringPoint) {
+        const profile = SPEED_PROFILES[currentSpeed];
+        const good = p2pWarmupBuffer.filter(p => p.acc <= profile.maxAccuracy).length;
+        const btn = document.getElementById('btnA');
+        if (good >= profile.minSamples) {
+          if (measureMode === 'p2p') setStatus('GPS ready — tap Set Point A', 'ok');
+          if (btn && btn.textContent !== 'Point A ✓') {
+            btn.textContent = 'Set Point A ✓';
+            btn.className = 'point-btn btn-a';
+            btn.style.borderColor = '';
+            btn.disabled = false;
+          }
+        } else {
+          if (measureMode === 'p2p') setStatus('GPS warming up… ' + good + '/' + profile.minSamples + ' samples', null);
+          if (btn && btn.textContent !== 'Point A ✓') {
+            btn.textContent = 'Set Point A (' + good + '/' + profile.minSamples + ')';
+            btn.className = 'point-btn btn-a-warmup';
+            btn.disabled = true;
           }
         }
-        // Always sync route Start button independently
-        syncRouteStartButton();
-      } else if (!pointA && !acquiringPoint && warmupBuffer.length === 0) {
-        if (measureMode === 'p2p') setStatus('Waiting for GPS signal…', null);
       }
     },
     () => {},
@@ -1886,40 +1870,16 @@ function startWarmup() {
   );
 }
 
-function stopWarmup() {
-  if (warmupWatchId !== null) {
-    navigator.geolocation.clearWatch(warmupWatchId);
-    warmupWatchId = null;
+function stopP2PWarmup() {
+  if (p2pWarmupWatchId !== null) {
+    navigator.geolocation.clearWatch(p2pWarmupWatchId);
+    p2pWarmupWatchId = null;
   }
 }
 
-// Sync the route Start button state based on warmup and trace state
-// Called from warmup callback and on init — completely independent of P2P state
-function syncRouteStartButton() {
-  if (traceActive) return; // route in progress — Start is locked, don't touch
-  const btn = document.getElementById('routeBtnStart');
-  if (!btn) return;
-  // Don't touch if it's already in done state
-  if (btn.className.includes('btn-a-done')) return;
-  const profile = SPEED_PROFILES[currentSpeed];
-  const good = warmupBuffer.filter(p => p.acc <= profile.maxAccuracy).length;
-  if (good >= profile.minSamples) {
-    btn.textContent = 'Start';
-    btn.className   = 'point-btn btn-a';
-    btn.disabled    = false;
-  } else {
-    btn.textContent = 'Start (' + good + '/' + profile.minSamples + ')';
-    btn.className   = 'point-btn btn-a-warmup';
-    btn.disabled    = true;
-  }
-}
-
-// Get averaged position from warmup buffer if enough samples exist
-// Returns averaged position or null if buffer is insufficient
-function getWarmupPosition(minSamples, maxAccuracy) {
-  const good = warmupBuffer.filter(p => p.acc <= maxAccuracy);
+function getP2PWarmupPosition(minSamples, maxAccuracy) {
+  const good = p2pWarmupBuffer.filter(p => p.acc <= maxAccuracy);
   if (good.length < minSamples) return null;
-  // Use the most recent minSamples readings
   const recent = good.slice(-minSamples);
   const lat = recent.reduce((s,p)=>s+p.lat,0)/recent.length;
   const lon = recent.reduce((s,p)=>s+p.lon,0)/recent.length;
@@ -1929,13 +1889,69 @@ function getWarmupPosition(minSamples, maxAccuracy) {
   return { lat, lon, alt, acc, n: recent.length };
 }
 
+// ── GPS WARM-UP — ROUTE ────────────────────────────────────
+let routeWarmupWatchId = null;
+let routeWarmupBuffer  = [];
+
+function startRouteWarmup() {
+  if (!gpsReady) return;
+  if (!navigator.geolocation) return;
+  if (routeWarmupWatchId !== null) return;
+  routeWarmupWatchId = navigator.geolocation.watchPosition(
+    pos => {
+      // Route warmup uses fast profile — just needs a quick ready lock
+      const maxAcc = SPEED_PROFILES['fast'].maxAccuracy;
+      if (pos.coords.accuracy <= maxAcc) {
+        routeWarmupBuffer.push({
+          lat: pos.coords.latitude, lon: pos.coords.longitude,
+          alt: pos.coords.altitude, acc: pos.coords.accuracy, ts: Date.now()
+        });
+        if (routeWarmupBuffer.length > WARMUP_MAX) routeWarmupBuffer.shift();
+      }
+      if (!traceActive) syncRouteStartButton();
+    },
+    () => {},
+    { enableHighAccuracy: true, maximumAge: 0 }
+  );
+}
+
+function stopRouteWarmup() {
+  if (routeWarmupWatchId !== null) {
+    navigator.geolocation.clearWatch(routeWarmupWatchId);
+    routeWarmupWatchId = null;
+  }
+}
+
+function syncRouteStartButton() {
+  if (traceActive) return;
+  const btn = document.getElementById('routeBtnStart');
+  if (!btn) return;
+  if (btn.className.includes('btn-a-done')) return;
+  const good = routeWarmupBuffer.filter(p => p.acc <= SPEED_PROFILES['fast'].maxAccuracy).length;
+  const needed = SPEED_PROFILES['fast'].minSamples;
+  if (good >= needed) {
+    btn.textContent = 'Start';
+    btn.className   = 'point-btn btn-a';
+    btn.disabled    = false;
+  } else {
+    btn.textContent = 'Start (' + good + '/' + needed + ')';
+    btn.className   = 'point-btn btn-a-warmup';
+    btn.disabled    = true;
+  }
+}
+
+// Legacy aliases so existing call sites keep working
+function startWarmup()  { startP2PWarmup(); startRouteWarmup(); }
+function stopWarmup()   { stopP2PWarmup();  stopRouteWarmup();  }
+const warmupBuffer = { _unused: true }; // prevent accidental use
+
 // ── GPS AVERAGING ──────────────────────────────────────────
 function acquirePosition(onSuccess, onError) {
   const profile = SPEED_PROFILES[currentSpeed];
   const { minSamples, maxAccuracy, window: windowMs } = profile;
 
-  // Check warmup buffer first — if we have enough good samples, use them instantly
-  const warmupPos = getWarmupPosition(minSamples, maxAccuracy);
+  // Check P2P warmup buffer first — if we have enough good samples, use them instantly
+  const warmupPos = getP2PWarmupPosition(minSamples, maxAccuracy);
   if (warmupPos) {
     setStatus('GPS ready (' + warmupPos.n + ' samples buffered)', 'live');
     setTimeout(() => onSuccess(warmupPos), 100); // tiny delay for UX feedback
@@ -2046,10 +2062,10 @@ function setPointA() {
 
   // Try warmup buffer first — use relaxed threshold on re-tap since GPS is already running
   const profile = SPEED_PROFILES[currentSpeed];
-  const fastProfile = SPEED_PROFILES['fast']; // minimum acceptable: 3 samples at 25m
+  const fastProfile = SPEED_PROFILES['fast'];
   const checkSamples  = isRetap ? fastProfile.minSamples  : profile.minSamples;
   const checkAccuracy = isRetap ? fastProfile.maxAccuracy : profile.maxAccuracy;
-  const warmupPos = getWarmupPosition(checkSamples, checkAccuracy);
+  const warmupPos = getP2PWarmupPosition(checkSamples, checkAccuracy);
 
   if (warmupPos) {
     btn.textContent = 'Locating…';
@@ -2071,8 +2087,8 @@ function setPointA() {
       document.getElementById('btnB').disabled = false;
       acquiringPoint = false;
       setStatus('Point A set — move to Point B', 'ok');
-      warmupBuffer = [];
-      startWarmup();
+      p2pWarmupBuffer = [];
+      startP2PWarmup();
       startLive();
       saveP2PState();
     }, 100);
@@ -2101,8 +2117,8 @@ function setPointA() {
       document.getElementById('btnB').disabled = false;
       acquiringPoint = false;
       setStatus('Point A set — move to Point B', 'ok');
-      warmupBuffer = []; // now clear — start fresh for Point B
-      startWarmup();     // start collecting for Point B immediately
+      p2pWarmupBuffer = []; // clear — start fresh for Point B
+      startP2PWarmup();     // collect for Point B immediately
       startLive();
       saveP2PState();
     },
@@ -2196,9 +2212,9 @@ function resetAll() {
   document.getElementById('btnA').textContent = 'Set Point A';
   document.getElementById('btnA').className = 'point-btn btn-a-warmup';
   document.getElementById('btnA').disabled = true;
-  stopWarmup();
-  warmupBuffer = [];
-  startWarmup();
+  stopP2PWarmup();
+  p2pWarmupBuffer = [];
+  startP2PWarmup();
   document.getElementById('btnB').textContent = 'Set Point B';
   document.getElementById('btnB').className = 'point-btn btn-b';
   document.getElementById('btnB').disabled = true;
@@ -2663,11 +2679,12 @@ function dismissWelcome() {
   localStorage.setItem('disttrkr_welcomed', '1');
   document.getElementById('welcomeScreen').classList.add('hidden');
   gpsReady = true;
-  // Start GPS warmup immediately so it's ready when they tap Set Point A
+  // Start both warmup watches
   const btn = document.getElementById('btnA');
   btn.className = 'point-btn btn-a-warmup';
   btn.disabled = true;
-  startWarmup();
+  startP2PWarmup();
+  startRouteWarmup();
   // Also trigger permission prompt
   if (navigator.geolocation) {
     navigator.geolocation.getCurrentPosition(() => {}, () => {}, { enableHighAccuracy: true });
@@ -2681,12 +2698,15 @@ function checkWelcome() {
     // Returning user — run GPS restores that were blocked during init
     restoreP2PState();
     restoreTraceState();
-    // Start warmup if neither P2P nor route already restored a watch
-    if (!warmupWatchId && !liveWatchId && !traceWatchId) {
+    // Start warmups if not already running
+    if (!p2pWarmupWatchId && !liveWatchId) {
       const btn = document.getElementById('btnA');
       btn.className = 'point-btn btn-a-warmup';
       btn.disabled = true;
-      startWarmup();
+      startP2PWarmup();
+    }
+    if (!routeWarmupWatchId && !traceWatchId) {
+      startRouteWarmup();
     }
   }
 }
@@ -3569,9 +3589,9 @@ function routeStop() {
     document.getElementById('routeStopCoords').textContent = 'Walk, then tap to save';
     document.getElementById('routePointCount').textContent = '';
     setRouteStatus('Tap Start to begin tracing', null);
-    stopWarmup();
-    warmupBuffer = [];
-    startWarmup();
+    stopRouteWarmup();
+    routeWarmupBuffer = [];
+    startRouteWarmup();
     // Directly enable Start — GPS already running outdoors, no need to gate on warmup
     const btnStart = document.getElementById('routeBtnStart');
     btnStart.textContent = 'Start';
@@ -3616,9 +3636,9 @@ function resetRoute() {
   document.getElementById('routeStopCoords').textContent = 'Walk, then tap to save';
   document.getElementById('routePointCount').textContent = '';
   setRouteStatus('Tap Start to begin tracing', null);
-  stopWarmup();
-  warmupBuffer = [];
-  startWarmup();
+  stopRouteWarmup();
+  routeWarmupBuffer = [];
+  startRouteWarmup();
   // Directly enable Start
   const btnStart = document.getElementById('routeBtnStart');
   btnStart.textContent = 'Start';
