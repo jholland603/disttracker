@@ -1680,7 +1680,7 @@ html, body {
 
       <div style="text-align:center; padding: 16px 0 8px; font-family:'DM Mono',monospace; font-size:9px; color:#666; letter-spacing:2px;">
         DIST TRKR · GPS · DISTANCE · TRACKER<br>
-        <span style="color:#777; font-size:11px; letter-spacing:1px;">v1.9.49</span>
+        <span style="color:#777; font-size:11px; letter-spacing:1px;">v1.9.50</span>
       </div>
 
     </div>
@@ -3092,7 +3092,7 @@ function fetchCoursesNear(lat, lon) {
   way[leisure=golf_course](around:${radius},${lat},${lon});
   relation[leisure=golf_course](around:${radius},${lat},${lon});
 );
-out tags;`;
+out center tags;`;
 
   fetch('https://overpass-api.de/api/interpreter', {
     method: 'POST',
@@ -3149,7 +3149,6 @@ out center tags;`;
   .then(r => r.json())
   .then(data => {
     if (!data.elements || data.elements.length === 0) {
-      // Fallback to proximity-based query if area query returns nothing
       fetchHoleDataByProximity(courses, lat, lon);
       return;
     }
@@ -3163,12 +3162,9 @@ out center tags;`;
       return;
     }
 
-    // Now we can properly assign greens per course since they came from course areas
-    // Build a per-course green map using proximity to course center
-    showCourseListWithClusteredGreens(courses, greens, tees, holes, lat, lon);
+    showCourseList(courses, greens, tees, holes, lat, lon);
   })
   .catch(() => {
-    // Fallback to proximity on network error
     fetchHoleDataByProximity(courses, lat, lon);
   });
 }
@@ -3208,53 +3204,35 @@ out center tags;`;
   });
 }
 
-function showCourseListWithClusteredGreens(courses, greens, tees, holes, userLat, userLon) {
-  // Assign greens to courses by finding the nearest course centroid for each green
-  // Since greens came from course area queries, they should cluster naturally
-  const courseGreensMap = new Map();
-  courses.forEach(c => courseGreensMap.set(c.id, []));
-
-  greens.forEach(g => {
-    // Assign each green to the course whose centroid is closest
-    // We compute each course's centroid from its own greens iteratively
-    // Simple approach: just proximity-cluster to nearest course
-    let bestId = courses[0].id;
-    let bestD = Infinity;
-    // Use existing assigned greens to find course centroids
-    courses.forEach(c => {
-      const existing = courseGreensMap.get(c.id);
-      if (existing.length === 0) {
-        // No greens yet for this course — use raw distance to user as tiebreak
-        bestId = c.id;
-        return;
-      }
-      const cLat = existing.reduce((s,g2) => s + g2.center.lat, 0) / existing.length;
-      const cLon = existing.reduce((s,g2) => s + g2.center.lon, 0) / existing.length;
-      const d = golfHaversine(g.center.lat, g.center.lon, cLat, cLon);
-      if (d < bestD) { bestD = d; bestId = c.id; }
-    });
-    courseGreensMap.get(bestId).push(g);
-  });
-
+function showCourseList(courses, greens, tees, holes, userLat, userLon) {
   const itemsEl = document.getElementById('golfCourseItems');
   itemsEl.innerHTML = '';
 
-  courses.forEach(course => {
+  // Sort courses by distance from user
+  const coursesWithDist = courses.map(c => {
+    // Estimate course center from its greens — find greens closest to this course
+    // by using the course's OSM bounds center if available, else user location
+    const cLat = c.center ? c.center.lat : userLat;
+    const cLon = c.center ? c.center.lon : userLon;
+    return { ...c, dist: golfHaversine(userLat, userLon, cLat, cLon) };
+  }).sort((a,b) => a.dist - b.dist);
+
+  coursesWithDist.forEach(course => {
     const tags = course.tags;
     const name = tags.name;
     const holeCount = tags['golf:course'] ? tags['golf:course'].replace('_hole','') + ' holes' : '';
     const par = tags['golf:par'] ? 'Par ' + tags['golf:par'] : '';
-    const courseGreens = courseGreensMap.get(course.id) || [];
-    if (courseGreens.length === 0) return; // skip courses with no greens
+    const distKm = (course.dist / 1000).toFixed(1);
 
     const div = document.createElement('div');
     div.style.cssText = `background:var(--panel); border:1px solid var(--border); border-radius:14px;
       padding:16px; margin-bottom:8px; cursor:pointer; -webkit-tap-highlight-color:transparent;`;
     div.innerHTML = `
       <div style="font-family:var(--sans); font-size:15px; font-weight:600; color:var(--text); margin-bottom:4px;">${name}</div>
-      <div style="font-family:var(--mono); font-size:11px; color:var(--dim);">${[holeCount, par].filter(Boolean).join(' · ')}</div>
+      <div style="font-family:var(--mono); font-size:11px; color:var(--dim);">${[holeCount, par, distKm + ' km'].filter(Boolean).join(' · ')}</div>
     `;
-    div.onclick = () => selectCourse(name, courseGreens, tees, holes);
+    // Pass all greens — selectCourse will filter to this course's greens by proximity
+    div.onclick = () => selectCourse(name, greens, tees, holes, course);
     itemsEl.appendChild(div);
   });
 
@@ -3263,57 +3241,25 @@ function showCourseListWithClusteredGreens(courses, greens, tees, holes, userLat
   document.getElementById('golfCourseList').style.flexDirection = 'column';
 }
 
-function showCourseList(courses, greens, tees, holes, userLat, userLon) {
-  const itemsEl = document.getElementById('golfCourseItems');
-  itemsEl.innerHTML = '';
-
-  // Compute centroid of each natural cluster of greens (one per course)
-  // by grouping greens that are within 2km of each other
-  function getGreensForCourse(allGreens, courseName) {
-    if (allGreens.length <= 18) return allGreens; // only one course worth of data
-    // Find the centroid of the greens cluster nearest to the user
-    // Sort greens by distance from user
-    const withDist = allGreens.map(g => ({
-      ...g,
-      userDist: golfHaversine(userLat, userLon, g.center.lat, g.center.lon)
-    })).sort((a,b) => a.userDist - b.userDist);
-    // Take the nearest green as seed, then keep all greens within 2km of that seed
-    const seed = withDist[0];
-    return allGreens.filter(g =>
-      golfHaversine(seed.center.lat, seed.center.lon, g.center.lat, g.center.lon) <= 3000
-    );
-  }
-
-  courses.forEach(course => {
-    const tags = course.tags;
-    const name = tags.name;
-    const holeCount = tags['golf:course'] ? tags['golf:course'].replace('_hole','') + ' holes' : '';
-    const par = tags['golf:par'] ? 'Par ' + tags['golf:par'] : '';
-
-    const courseGreens = getGreensForCourse(greens, name);
-
-    const div = document.createElement('div');
-    div.style.cssText = `
-      background:var(--panel); border:1px solid var(--border); border-radius:14px;
-      padding:16px; margin-bottom:8px; cursor:pointer;
-      -webkit-tap-highlight-color:transparent;
-    `;
-    div.innerHTML = `
-      <div style="font-family:var(--sans); font-size:15px; font-weight:600; color:var(--text); margin-bottom:4px;">${name}</div>
-      <div style="font-family:var(--mono); font-size:11px; color:var(--dim);">${[holeCount, par].filter(Boolean).join(' · ')}</div>
-    `;
-    div.onclick = () => selectCourse(name, courseGreens, tees, holes);
-    itemsEl.appendChild(div);
-  });
-
-  document.getElementById('golfSearch').style.display = 'none';
-  document.getElementById('golfCourseList').style.display = 'flex';
-  document.getElementById('golfCourseList').style.flexDirection = 'column';
-}
-
-function selectCourse(name, greens, tees, holes) {
+function selectCourse(name, allGreens, tees, holes, courseEl) {
   golfCourseName = name;
   document.getElementById('golfCourseName').textContent = name;
+
+  // Filter greens to this course by proximity to course center
+  // Course center comes from OSM bounds if available, else centroid of all greens
+  let greens = allGreens;
+  if (allGreens.length > 18 && courseEl) {
+    // Find greens nearest to this course's center
+    const cLat = courseEl.center ? courseEl.center.lat
+      : allGreens.reduce((s,g) => s + g.center.lat, 0) / allGreens.length;
+    const cLon = courseEl.center ? courseEl.center.lon
+      : allGreens.reduce((s,g) => s + g.center.lon, 0) / allGreens.length;
+    // Keep greens within 3km of this course center
+    const nearby = allGreens.filter(g =>
+      golfHaversine(cLat, cLon, g.center.lat, g.center.lon) <= 3000
+    );
+    if (nearby.length > 0) greens = nearby;
+  }
 
   // Sort greens by hole ref number
   const sorted = [...greens].sort((a, b) => {
