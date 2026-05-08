@@ -1661,7 +1661,7 @@ html, body {
 
       <div style="text-align:center; padding: 16px 0 8px; font-family:'DM Mono',monospace; font-size:9px; color:#666; letter-spacing:2px;">
         DIST TRKR · GPS · DISTANCE · TRACKER<br>
-        <span style="color:#777; font-size:11px; letter-spacing:1px;">v1.9.33</span>
+        <span style="color:#777; font-size:11px; letter-spacing:1px;">v1.9.34</span>
       </div>
 
     </div>
@@ -3536,11 +3536,22 @@ function routeStop() {
     document.getElementById('routeStopCoords').textContent = 'Walk, then tap to save';
     document.getElementById('routePointCount').textContent = '';
     setRouteStatus('Tap Start to begin tracing', null);
-    // Restart warmup so Start button unlocks quickly
     stopWarmup();
     warmupBuffer = [];
     startWarmup();
-    resetRouteButtons();
+    // Directly enable Start — GPS already running outdoors, no need to gate on warmup
+    const btnStart = document.getElementById('routeBtnStart');
+    btnStart.textContent = 'Start';
+    btnStart.className   = 'point-btn btn-a';
+    btnStart.disabled    = false;
+    const btnStop = document.getElementById('routeBtnStop');
+    btnStop.textContent  = 'Stop & Save';
+    btnStop.className    = 'point-btn btn-b';
+    btnStop.disabled     = true;
+    const btnPause = document.getElementById('routePauseBtn');
+    btnPause.disabled    = true;
+    btnPause.textContent = '⏸ Pause';
+    btnPause.style.color = 'var(--dim)';
   }, 1500);
 }
 
@@ -3575,7 +3586,19 @@ function resetRoute() {
   stopWarmup();
   warmupBuffer = [];
   startWarmup();
-  resetRouteButtons();
+  // Directly enable Start
+  const btnStart = document.getElementById('routeBtnStart');
+  btnStart.textContent = 'Start';
+  btnStart.className   = 'point-btn btn-a';
+  btnStart.disabled    = false;
+  const btnStop = document.getElementById('routeBtnStop');
+  btnStop.textContent  = 'Stop & Save';
+  btnStop.className    = 'point-btn btn-b';
+  btnStop.disabled     = true;
+  const btnPauseR = document.getElementById('routePauseBtn');
+  btnPauseR.disabled    = true;
+  btnPauseR.textContent = '⏸ Pause';
+  btnPauseR.style.color = 'var(--dim)';
 }
 
 function resetRouteButtons() {
