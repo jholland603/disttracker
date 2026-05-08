@@ -1466,9 +1466,18 @@ function showCourseList(courses, greens, tees, holes, userLat, userLon) {
 function selectCourse(name, allGreens, tees, holes, courseEl) {
   golfCourseName = name;
   document.getElementById('golfCourseName').textContent = name;
-  document.getElementById('golfSearchStatus').textContent = 'Loading hole data for ' + name + '…';
   document.getElementById('golfCourseList').style.display = 'none';
   document.getElementById('golfSearch').style.display = 'none';
+
+  // Show loading state immediately so user knows something is happening
+  const prompt = document.getElementById('golfStartPrompt');
+  prompt.style.display = 'flex';
+  prompt.style.flexDirection = 'column';
+  document.getElementById('golfStartCourseName').textContent = name.toUpperCase();
+  document.getElementById('golfStartCol1').innerHTML = '';
+  document.getElementById('golfStartCol2').innerHTML = '';
+  document.getElementById('golfStartLoadingMsg').style.display = 'block';
+  document.getElementById('golfStartGrid').style.display = 'none';
 
   // Fetch hole data scoped specifically to this course using its OSM ID
   const areaSetup = courseEl.type === 'relation'
@@ -1496,17 +1505,13 @@ out center tags;`;
     const courseHoles = (data.elements || []).filter(e => e.tags && e.tags.golf === 'hole' && e.tags.ref);
 
     if (greens.length === 0) {
-      // Area query failed — fall back to the pre-fetched greens filtered by course center
-      document.getElementById('golfSearchStatus').textContent = '';
       buildCourseHoles(name, allGreens, tees, holes, courseEl);
       return;
     }
 
-    document.getElementById('golfSearchStatus').textContent = '';
     buildCourseHoles(name, greens, courseTees, courseHoles, courseEl);
   })
   .catch(() => {
-    document.getElementById('golfSearchStatus').textContent = '';
     buildCourseHoles(name, allGreens, tees, holes, courseEl);
   });
 }
@@ -1588,8 +1593,8 @@ function showStartHolePrompt() {
   prompt.style.flexDirection = 'column';
 
   document.getElementById('golfStartCourseName').textContent = golfCourseName || '';
-
-  golfSelectedStartIdx = 0;
+  document.getElementById('golfStartLoadingMsg').style.display = 'none';
+  document.getElementById('golfStartGrid').style.display = 'grid';
 
   const col1 = document.getElementById('golfStartCol1');
   const col2 = document.getElementById('golfStartCol2');
@@ -1602,48 +1607,26 @@ function showStartHolePrompt() {
     btn.id = `startHoleBtn_${idx}`;
     btn.style.cssText = `
       padding:12px 10px; border-radius:12px; text-align:left;
-      background:${idx === 0 ? 'rgba(0,229,255,0.15)' : 'rgba(255,255,255,0.04)'};
-      border:${idx === 0 ? '1.5px solid rgba(0,229,255,0.4)' : '1px solid rgba(255,255,255,0.08)'};
-      color:${idx === 0 ? 'var(--accent)' : 'var(--text)'};
+      background:rgba(255,255,255,0.04);
+      border:1px solid rgba(255,255,255,0.08);
+      color:var(--text);
       font-family:var(--sans); cursor:pointer;
       -webkit-tap-highlight-color:transparent; transition:all 0.12s;
       display:flex; align-items:center; justify-content:space-between;
     `;
     btn.innerHTML = `
       <span style="font-size:17px; font-weight:700;">Hole ${hole.num || (idx + 1)}</span>
-      <span style="font-family:var(--mono); font-size:11px; color:${idx === 0 ? 'var(--accent)' : 'var(--dim)'}; opacity:0.8;">${par}</span>
+      <span style="font-family:var(--mono); font-size:11px; color:var(--dim); opacity:0.8;">${par}</span>
     `;
-    btn.onclick = () => selectStartHole(idx);
+    btn.onclick = () => confirmStartHole(idx);
 
     if (idx < 9) col1.appendChild(btn);
     else         col2.appendChild(btn);
   });
 }
 
-function selectStartHole(idx) {
-  // Deselect previous
-  const prev = document.getElementById(`startHoleBtn_${golfSelectedStartIdx}`);
-  if (prev) {
-    prev.style.background = 'rgba(255,255,255,0.04)';
-    prev.style.border = '1px solid rgba(255,255,255,0.08)';
-    prev.style.color = 'var(--text)';
-    const prevPar = prev.querySelector('span:last-child');
-    if (prevPar) prevPar.style.color = 'var(--dim)';
-  }
-  golfSelectedStartIdx = idx;
-  // Highlight selected
-  const btn = document.getElementById(`startHoleBtn_${idx}`);
-  if (btn) {
-    btn.style.background = 'rgba(0,229,255,0.15)';
-    btn.style.border = '1.5px solid rgba(0,229,255,0.4)';
-    btn.style.color = 'var(--accent)';
-    const par = btn.querySelector('span:last-child');
-    if (par) par.style.color = 'var(--accent)';
-  }
-}
-
-function confirmStartHole() {
-  golfCurrentHole = golfSelectedStartIdx;
+function confirmStartHole(idx) {
+  golfCurrentHole = idx;
   golfScores      = [];
   saveGolfState();
 
