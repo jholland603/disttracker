@@ -1661,7 +1661,7 @@ html, body {
 
       <div style="text-align:center; padding: 16px 0 8px; font-family:'DM Mono',monospace; font-size:9px; color:#666; letter-spacing:2px;">
         DIST TRKR · GPS · DISTANCE · TRACKER<br>
-        <span style="color:#777; font-size:11px; letter-spacing:1px;">v1.9.39</span>
+        <span style="color:#777; font-size:11px; letter-spacing:1px;">v1.9.41</span>
       </div>
 
     </div>
@@ -3014,8 +3014,63 @@ function fetchHoleDataForCourses(courses, lat, lon) {
   const statusEl = document.getElementById('golfSearchStatus');
   statusEl.textContent = `Found ${courses.length} course(s) — checking hole data…`;
 
-  const courseIds = courses.map(c => `way(${c.id});`).join('\n');
+  // Build per-course queries using course way/relation IDs as bounding areas
+  // This ensures greens/tees belong to the correct course
+  const areaQueries = courses.map(c => {
+    const areaId = c.type === 'relation' ? c.id + 3600000000 : c.id + 2400000000;
+    return `
+      way[golf=green](area.c${c.id});
+      way[golf=tee](area.c${c.id});
+      node[golf=tee](area.c${c.id});
+      way[golf=hole](area.c${c.id});
+    `;
+  });
 
+  const areaSetup = courses.map(c => {
+    if (c.type === 'relation') return `relation(${c.id});map_to_area->.c${c.id};`;
+    return `way(${c.id});map_to_area->.c${c.id};`;
+  }).join('\n');
+
+  const query = `[out:json][timeout:30];
+${areaSetup}
+(
+${areaQueries.join('')}
+);
+out center tags;`;
+
+  fetch('https://overpass-api.de/api/interpreter', {
+    method: 'POST',
+    body: query
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (!data.elements || data.elements.length === 0) {
+      // Fallback to proximity-based query if area query returns nothing
+      fetchHoleDataByProximity(courses, lat, lon);
+      return;
+    }
+
+    const greens = data.elements.filter(e => e.tags && e.tags.golf === 'green' && e.center);
+    const tees   = data.elements.filter(e => e.tags && e.tags.golf === 'tee' && (e.center || (e.lat && e.lon)));
+    const holes  = data.elements.filter(e => e.tags && e.tags.golf === 'hole' && e.tags.ref);
+
+    if (greens.length === 0) {
+      fetchHoleDataByProximity(courses, lat, lon);
+      return;
+    }
+
+    // Now we can properly assign greens per course since they came from course areas
+    // Build a per-course green map using proximity to course center
+    showCourseListWithClusteredGreens(courses, greens, tees, holes, lat, lon);
+  })
+  .catch(() => {
+    // Fallback to proximity on network error
+    fetchHoleDataByProximity(courses, lat, lon);
+  });
+}
+
+function fetchHoleDataByProximity(courses, lat, lon) {
+  const statusEl = document.getElementById('golfSearchStatus');
   const query = `[out:json][timeout:30];
 (
   way[golf=green](around:5000,${lat},${lon});
@@ -3035,18 +3090,13 @@ out center tags;`;
       statusEl.textContent = 'Courses found but no hole data mapped yet.';
       return;
     }
-
-    // Group greens — each green way has a center lat/lon
-    // We'll just find all greens and group by proximity to course center
     const greens = data.elements.filter(e => e.tags && e.tags.golf === 'green' && e.center);
     const tees   = data.elements.filter(e => e.tags && e.tags.golf === 'tee' && (e.center || (e.lat && e.lon)));
     const holes  = data.elements.filter(e => e.tags && e.tags.golf === 'hole' && e.tags.ref);
-
     if (greens.length === 0) {
       statusEl.textContent = 'No hole data available for nearby courses.';
       return;
     }
-
     showCourseList(courses, greens, tees, holes, lat, lon);
   })
   .catch(() => {
@@ -3054,21 +3104,89 @@ out center tags;`;
   });
 }
 
-function showCourseList(courses, greens, tees, holes, userLat, userLon) {
-  // Assign greens to courses — use ref tag or proximity
-  // Build a map of courseId -> greens array
-  // Since OSM doesn't always link greens to courses via relation,
-  // we'll show all courses and pass all greens, then filter per course on selection
+function showCourseListWithClusteredGreens(courses, greens, tees, holes, userLat, userLon) {
+  // Assign greens to courses by finding the nearest course centroid for each green
+  // Since greens came from course area queries, they should cluster naturally
+  const courseGreensMap = new Map();
+  courses.forEach(c => courseGreensMap.set(c.id, []));
+
+  greens.forEach(g => {
+    // Assign each green to the course whose centroid is closest
+    // We compute each course's centroid from its own greens iteratively
+    // Simple approach: just proximity-cluster to nearest course
+    let bestId = courses[0].id;
+    let bestD = Infinity;
+    // Use existing assigned greens to find course centroids
+    courses.forEach(c => {
+      const existing = courseGreensMap.get(c.id);
+      if (existing.length === 0) {
+        // No greens yet for this course — use raw distance to user as tiebreak
+        bestId = c.id;
+        return;
+      }
+      const cLat = existing.reduce((s,g2) => s + g2.center.lat, 0) / existing.length;
+      const cLon = existing.reduce((s,g2) => s + g2.center.lon, 0) / existing.length;
+      const d = golfHaversine(g.center.lat, g.center.lon, cLat, cLon);
+      if (d < bestD) { bestD = d; bestId = c.id; }
+    });
+    courseGreensMap.get(bestId).push(g);
+  });
 
   const itemsEl = document.getElementById('golfCourseItems');
   itemsEl.innerHTML = '';
 
-  // For each course, estimate distance from user
   courses.forEach(course => {
     const tags = course.tags;
     const name = tags.name;
     const holeCount = tags['golf:course'] ? tags['golf:course'].replace('_hole','') + ' holes' : '';
     const par = tags['golf:par'] ? 'Par ' + tags['golf:par'] : '';
+    const courseGreens = courseGreensMap.get(course.id) || [];
+    if (courseGreens.length === 0) return; // skip courses with no greens
+
+    const div = document.createElement('div');
+    div.style.cssText = `background:var(--panel); border:1px solid var(--border); border-radius:14px;
+      padding:16px; margin-bottom:8px; cursor:pointer; -webkit-tap-highlight-color:transparent;`;
+    div.innerHTML = `
+      <div style="font-family:var(--sans); font-size:15px; font-weight:600; color:var(--text); margin-bottom:4px;">${name}</div>
+      <div style="font-family:var(--mono); font-size:11px; color:var(--dim);">${[holeCount, par].filter(Boolean).join(' · ')}</div>
+    `;
+    div.onclick = () => selectCourse(name, courseGreens, tees, holes);
+    itemsEl.appendChild(div);
+  });
+
+  document.getElementById('golfSearch').style.display = 'none';
+  document.getElementById('golfCourseList').style.display = 'flex';
+  document.getElementById('golfCourseList').style.flexDirection = 'column';
+}
+
+function showCourseList(courses, greens, tees, holes, userLat, userLon) {
+  const itemsEl = document.getElementById('golfCourseItems');
+  itemsEl.innerHTML = '';
+
+  // Compute centroid of each natural cluster of greens (one per course)
+  // by grouping greens that are within 2km of each other
+  function getGreensForCourse(allGreens, courseName) {
+    if (allGreens.length <= 18) return allGreens; // only one course worth of data
+    // Find the centroid of the greens cluster nearest to the user
+    // Sort greens by distance from user
+    const withDist = allGreens.map(g => ({
+      ...g,
+      userDist: golfHaversine(userLat, userLon, g.center.lat, g.center.lon)
+    })).sort((a,b) => a.userDist - b.userDist);
+    // Take the nearest green as seed, then keep all greens within 2km of that seed
+    const seed = withDist[0];
+    return allGreens.filter(g =>
+      golfHaversine(seed.center.lat, seed.center.lon, g.center.lat, g.center.lon) <= 2000
+    );
+  }
+
+  courses.forEach(course => {
+    const tags = course.tags;
+    const name = tags.name;
+    const holeCount = tags['golf:course'] ? tags['golf:course'].replace('_hole','') + ' holes' : '';
+    const par = tags['golf:par'] ? 'Par ' + tags['golf:par'] : '';
+
+    const courseGreens = getGreensForCourse(greens, name);
 
     const div = document.createElement('div');
     div.style.cssText = `
@@ -3080,7 +3198,7 @@ function showCourseList(courses, greens, tees, holes, userLat, userLon) {
       <div style="font-family:var(--sans); font-size:15px; font-weight:600; color:var(--text); margin-bottom:4px;">${name}</div>
       <div style="font-family:var(--mono); font-size:11px; color:var(--dim);">${[holeCount, par].filter(Boolean).join(' · ')}</div>
     `;
-    div.onclick = () => selectCourse(name, greens, tees, holes);
+    div.onclick = () => selectCourse(name, courseGreens, tees, holes);
     itemsEl.appendChild(div);
   });
 
