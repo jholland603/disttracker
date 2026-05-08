@@ -1680,7 +1680,7 @@ html, body {
 
       <div style="text-align:center; padding: 16px 0 8px; font-family:'DM Mono',monospace; font-size:9px; color:#666; letter-spacing:2px;">
         DIST TRKR · GPS · DISTANCE · TRACKER<br>
-        <span style="color:#777; font-size:11px; letter-spacing:1px;">v1.9.47</span>
+        <span style="color:#777; font-size:11px; letter-spacing:1px;">v1.9.48</span>
       </div>
 
     </div>
@@ -2919,21 +2919,32 @@ function renderScore() {
     }
   }
 
-  // Running total
-  const played = golfScores.filter(s => s !== undefined);
-  if (played.length === 0) {
+  // Running total — iterate all holes, only count those with a score entered
+  let totalStrokes = 0;
+  let totalPar     = 0;
+  let holesPlayed  = 0;
+  let parKnown     = true;
+  golfHoles.forEach((h, i) => {
+    if (golfScores[i] === undefined) return;
+    totalStrokes += golfScores[i];
+    holesPlayed++;
+    if (h.par) {
+      totalPar += parseInt(h.par);
+    } else {
+      parKnown = false;
+    }
+  });
+
+  if (holesPlayed === 0) {
     totalEl.textContent = '';
     return;
   }
-  const totalStrokes = played.reduce((s,v) => s+v, 0);
-  const totalPar = golfHoles.slice(0, golfScores.length)
-    .filter((h,i) => golfScores[i] !== undefined && h.par)
-    .reduce((s,h) => s + parseInt(h.par), 0);
+
   const roundDiff = totalStrokes - totalPar;
-  const diffStr = totalPar > 0
+  const diffStr = parKnown && totalPar > 0
     ? (roundDiff === 0 ? 'EVEN' : (roundDiff > 0 ? '+' + roundDiff : '' + roundDiff))
     : '';
-  totalEl.textContent = 'ROUND: ' + totalStrokes + (diffStr ? '  ·  ' + diffStr : '') + '  ·  ' + played.length + ' HOLES';
+  totalEl.textContent = 'ROUND: ' + totalStrokes + (diffStr ? '  ·  ' + diffStr : '') + '  ·  ' + holesPlayed + ' HOLES';
 }
 
 function golfUnitLabel() {
