@@ -1686,7 +1686,7 @@ html, body {
 
       <div style="text-align:center; padding: 16px 0 8px; font-family:'DM Mono',monospace; font-size:9px; color:#666; letter-spacing:2px;">
         DIST TRKR · GPS · DISTANCE · TRACKER<br>
-        <span style="color:#777; font-size:11px; letter-spacing:1px;">v1.9.57</span>
+        <span style="color:#777; font-size:11px; letter-spacing:1px;">v1.9.58</span>
       </div>
 
     </div>
@@ -3271,6 +3271,9 @@ function buildCourseHoles(name, greens, tees, holes, courseEl) {
       tees: uniqueTees
     };
   });
+
+  // Clamp to 18 holes — filter out any ghost entries from bad OSM data
+  golfHoles = golfHoles.slice(0, 18);
 
   if (golfHoles.length === 0) {
     document.getElementById('golfSearchStatus').textContent = 'No hole data found for this course.';
