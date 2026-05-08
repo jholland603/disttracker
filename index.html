@@ -1486,11 +1486,30 @@ html, body {
         <div id="golfParLabel" style="font-family:var(--mono); font-size:11px; color:var(--dim); letter-spacing:2px; margin-bottom:8px;"></div>
         <div id="golfDistCenter" style="font-family:var(--display); font-size:96px; font-weight:800; color:var(--green); line-height:1;">—</div>
         <div id="golfUnitCenter" style="font-family:var(--mono); font-size:13px; color:var(--dim); letter-spacing:2px; margin-top:6px;">YD</div>
-        <div style="font-family:var(--mono); font-size:10px; color:var(--dim); letter-spacing:1px; margin-top:8px;">TO CENTER OF GREEN</div>
-        <div id="golfGpsStatus" style="font-family:var(--mono); font-size:11px; color:var(--dim); letter-spacing:1px; margin-top:12px;"></div>
+
+        <!-- Score counter -->
+        <div id="golfScoreWrap" style="margin-top:24px; width:100%; max-width:280px;">
+          <div style="display:flex; align-items:center; justify-content:space-between; background:var(--panel); border:1px solid var(--border); border-radius:16px; padding:10px 16px;">
+            <button onclick="adjustScore(-1)" style="
+              width:44px; height:44px; border-radius:50%;
+              background:rgba(255,61,113,0.12); border:1px solid rgba(255,61,113,0.3);
+              color:var(--red); font-size:24px; font-weight:800; cursor:pointer;
+              -webkit-tap-highlight-color:transparent; line-height:1;">−</button>
+            <div style="text-align:center; flex:1;">
+              <div id="golfScoreNum" style="font-family:var(--display); font-size:48px; font-weight:800; color:var(--text); line-height:1;">—</div>
+              <div id="golfScoreDiff" style="font-family:var(--mono); font-size:11px; letter-spacing:1px; margin-top:2px; color:var(--dim);">SET PAR FIRST</div>
+            </div>
+            <button onclick="adjustScore(1)" style="
+              width:44px; height:44px; border-radius:50%;
+              background:rgba(0,229,255,0.1); border:1px solid rgba(0,229,255,0.25);
+              color:var(--accent); font-size:24px; font-weight:800; cursor:pointer;
+              -webkit-tap-highlight-color:transparent; line-height:1;">+</button>
+          </div>
+          <div id="golfRoundTotal" style="font-family:var(--mono); font-size:11px; color:var(--dim); letter-spacing:1px; text-align:center; margin-top:8px;"></div>
+        </div>
+
         <!-- Tee distances — shown only if tee data available -->
         <div id="golfTeeDistances" style="margin-top:20px; width:100%; max-width:320px; display:none;">
-          <div style="font-family:var(--mono); font-size:10px; color:var(--dim); letter-spacing:2px; margin-bottom:8px;">FROM TEES</div>
           <div id="golfTeeItems" style="display:flex; flex-direction:column; gap:6px;"></div>
         </div>
       </div>
@@ -1661,7 +1680,7 @@ html, body {
 
       <div style="text-align:center; padding: 16px 0 8px; font-family:'DM Mono',monospace; font-size:9px; color:#666; letter-spacing:2px;">
         DIST TRKR · GPS · DISTANCE · TRACKER<br>
-        <span style="color:#777; font-size:11px; letter-spacing:1px;">v1.9.41</span>
+        <span style="color:#777; font-size:11px; letter-spacing:1px;">v1.9.43</span>
       </div>
 
     </div>
@@ -2841,11 +2860,80 @@ let golfCurrentPos  = null;
 let golfHoles       = [];     // array of hole objects for selected course
 let golfCurrentHole = 0;      // index into golfHoles
 let golfCourseName  = '';
+let golfScores      = [];     // stroke counts per hole, index matches golfHoles
 
 // Conversion helpers
 function toGolfUnit(meters) {
   if (golfUnit === 'yd') return Math.round(meters * 1.09361);
   return Math.round(meters);
+}
+
+// ── SCORE TRACKING ─────────────────────────────────────────
+function adjustScore(delta) {
+  const hole = golfHoles[golfCurrentHole];
+  if (!hole) return;
+  if (golfScores[golfCurrentHole] === undefined) {
+    // Start from par if set, otherwise 0
+    golfScores[golfCurrentHole] = hole.par ? hole.par : 0;
+  }
+  golfScores[golfCurrentHole] = Math.max(1, golfScores[golfCurrentHole] + delta);
+  renderScore();
+  saveGolfState();
+}
+
+function renderScore() {
+  const hole = golfHoles[golfCurrentHole];
+  const scoreEl  = document.getElementById('golfScoreNum');
+  const diffEl   = document.getElementById('golfScoreDiff');
+  const totalEl  = document.getElementById('golfRoundTotal');
+  if (!hole) return;
+
+  const score = golfScores[golfCurrentHole];
+  if (score === undefined) {
+    scoreEl.textContent  = hole.par || '—';
+    scoreEl.style.color  = 'var(--text)';
+    diffEl.textContent   = hole.par ? 'TAP +/− TO SCORE' : 'NO PAR DATA';
+    diffEl.style.color   = 'var(--dim)';
+  } else {
+    scoreEl.textContent = score;
+    const par = hole.par;
+    if (par) {
+      const diff = score - par;
+      if (diff === 0) {
+        diffEl.textContent = 'PAR';
+        diffEl.style.color = 'var(--dim)';
+        scoreEl.style.color = 'var(--text)';
+      } else if (diff < 0) {
+        diffEl.textContent = diff + ' UNDER';
+        diffEl.style.color = 'var(--green)';
+        scoreEl.style.color = 'var(--green)';
+      } else {
+        diffEl.textContent = '+' + diff + ' OVER';
+        diffEl.style.color = 'var(--red)';
+        scoreEl.style.color = 'var(--red)';
+      }
+    } else {
+      diffEl.textContent = score + ' STROKES';
+      diffEl.style.color = 'var(--dim)';
+      scoreEl.style.color = 'var(--text)';
+    }
+  }
+
+  // Running total
+  const played = golfScores.filter(s => s !== undefined);
+  if (played.length === 0) {
+    totalEl.textContent = '';
+    return;
+  }
+  const totalStrokes = played.reduce((s,v) => s+v, 0);
+  const totalPar = golfHoles.slice(0, golfScores.length)
+    .filter((h,i) => golfScores[i] !== undefined && h.par)
+    .reduce((s,h) => s + h.par, 0);
+  const roundDiff = totalStrokes - totalPar;
+  const diffStr = totalPar > 0
+    ? (roundDiff === 0 ? 'EVEN' : (roundDiff > 0 ? '+' + roundDiff : '' + roundDiff))
+    : '';
+  totalEl.textContent = 'ROUND: ' + totalStrokes + (diffStr ? '  ·  ' + diffStr : '') + '  ·  ' + played.length + ' HOLES';
 }
 
 function golfUnitLabel() {
@@ -3270,6 +3358,7 @@ function selectCourse(name, greens, tees, holes) {
   }
 
   golfCurrentHole = 0;
+  golfScores      = [];
   saveGolfState();
   document.getElementById('golfCourseList').style.display = 'none';
   const hv = document.getElementById('golfHoleView');
@@ -3290,15 +3379,14 @@ function renderHole() {
   if (!hole) return;
 
   document.getElementById('golfHoleNum').textContent = hole.num || (golfCurrentHole + 1);
+  document.getElementById('golfPrevHole').style.opacity = golfCurrentHole === 0 ? '0.3' : '1';
+  document.getElementById('golfNextHole').style.opacity = golfCurrentHole === golfHoles.length - 1 ? '0.3' : '1';
   let meta = [];
   if (hole.par) meta.push('PAR ' + hole.par);
   if (hole.handicap) meta.push('HCP ' + hole.handicap);
   document.getElementById('golfParLabel').textContent = meta.join('  ·  ');
 
-  // Prev/next button states
-  document.getElementById('golfPrevHole').style.opacity = '1';
-  document.getElementById('golfNextHole').style.opacity = '1';
-
+  renderScore();
   updateGolfDistances();
 }
 
@@ -3306,7 +3394,6 @@ function updateGolfDistances() {
   if (!golfCurrentPos || golfHoles.length === 0) {
     document.getElementById('golfDistCenter').textContent = '—';
     document.getElementById('golfUnitCenter').textContent = golfUnitLabel();
-    document.getElementById('golfGpsStatus').textContent = 'Waiting for GPS…';
     return;
   }
 
@@ -3317,9 +3404,6 @@ function updateGolfDistances() {
 
   document.getElementById('golfDistCenter').textContent = toGolfUnit(dCenter);
   document.getElementById('golfUnitCenter').textContent = golfUnitLabel();
-
-  document.getElementById('golfGpsStatus').textContent =
-    '±' + Math.round(acc * (golfUnit === 'yd' ? 1.09361 : 1)) + ' ' + golfUnitLabel() + ' GPS accuracy';
 
   // Tee distances
   const teeContainer = document.getElementById('golfTeeDistances');
@@ -3389,18 +3473,24 @@ function updateGolfDistances() {
 
 function changeHole(dir) {
   if (!golfHoles || golfHoles.length === 0) return;
-  golfCurrentHole = (golfCurrentHole + dir + golfHoles.length) % golfHoles.length;
+  const next = golfCurrentHole + dir;
+  if (next < 0 || next >= golfHoles.length) return; // clamp — no wrap
+  golfCurrentHole = next;
   clearTimeout(teeProximityTimer);
   teeProximityTimer = null;
   teeProximityHole = null;
   hideAdvanceNotice();
   saveGolfState();
   renderHole();
+  // Dim arrows at boundaries
+  document.getElementById('golfPrevHole').style.opacity = golfCurrentHole === 0 ? '0.3' : '1';
+  document.getElementById('golfNextHole').style.opacity = golfCurrentHole === golfHoles.length - 1 ? '0.3' : '1';
 }
 
 function resetGolfSearch() {
   golfHoles = [];
   golfCurrentHole = 0;
+  golfScores = [];
   golfCourseName = '';
   clearGolfState();
   document.getElementById('golfSearch').style.display = 'flex';
@@ -3894,7 +3984,7 @@ function restoreTraceState() {
 
 function saveGolfState() {
   if (!golfHoles.length) return;
-  const state = { name: golfCourseName, hole: golfCurrentHole, holes: golfHoles };
+  const state = { name: golfCourseName, hole: golfCurrentHole, holes: golfHoles, scores: golfScores };
   localStorage.setItem('disttrkr_golf', JSON.stringify(state));
 }
 
@@ -3912,6 +4002,7 @@ function restoreGolfState() {
     golfCourseName  = state.name;
     golfHoles       = state.holes;
     golfCurrentHole = state.hole || 0;
+    golfScores      = state.scores || [];
 
     document.getElementById('golfCourseName').textContent = golfCourseName;
     document.getElementById('golfSearch').style.display = 'none';
