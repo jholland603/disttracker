@@ -1447,12 +1447,18 @@ html, body {
       <!-- Course + hole header -->
       <div style="padding:12px 16px 0; flex-shrink:0;">
         <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:4px;">
-          <button onclick="resetGolfSearch()" style="
-            font-family:var(--sans); font-size:13px; color:var(--mid);
+          <button onclick="confirmFinishRound()" style="
+            font-family:var(--sans); font-size:13px; font-weight:700; color:var(--text);
             background:transparent; border:none; cursor:pointer; padding:0;
-            -webkit-tap-highlight-color:transparent;">‹ Courses</button>
+            -webkit-tap-highlight-color:transparent;">‹ Finish Round</button>
           <div id="golfCourseName" style="font-family:var(--mono); font-size:11px; color:var(--dim); letter-spacing:1px; text-align:right; max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"></div>
         </div>
+      </div>
+
+      <!-- Scorecard strip -->
+      <div id="golfScorecardStrip" style="
+        display:flex; overflow-x:auto; padding:6px 12px 4px;
+        gap:6px; flex-shrink:0; scrollbar-width:none;">
       </div>
 
       <!-- Hole number + nav -->
@@ -1680,7 +1686,7 @@ html, body {
 
       <div style="text-align:center; padding: 16px 0 8px; font-family:'DM Mono',monospace; font-size:9px; color:#666; letter-spacing:2px;">
         DIST TRKR · GPS · DISTANCE · TRACKER<br>
-        <span style="color:#777; font-size:11px; letter-spacing:1px;">v1.9.51</span>
+        <span style="color:#777; font-size:11px; letter-spacing:1px;">v1.9.53</span>
       </div>
 
     </div>
@@ -2878,6 +2884,7 @@ function adjustScore(delta) {
   }
   golfScores[golfCurrentHole] = Math.max(1, golfScores[golfCurrentHole] + delta);
   renderScore();
+  renderScorecardStrip();
   saveGolfState();
 }
 
@@ -3023,6 +3030,11 @@ function checkTeeProximity(lat, lon) {
     showAdvanceNotice(`Moving to hole ${holeNum} in ${TEE_ADVANCE_SECS}s…`);
     teeProximityTimer = setTimeout(() => {
       if (teeProximityHole === closestHoleIdx) {
+        const prevHole = golfCurrentHole;
+        // Auto-record par for the hole we're leaving if no score entered
+        if (golfScores[prevHole] === undefined && golfHoles[prevHole] && golfHoles[prevHole].par) {
+          golfScores[prevHole] = parseInt(golfHoles[prevHole].par);
+        }
         golfCurrentHole = closestHoleIdx;
         saveGolfState();
         renderHole();
@@ -3358,6 +3370,129 @@ function buildCourseHoles(name, greens, tees, holes, courseEl) {
   startGolfGpsWatch();
 }
 
+function renderScorecardStrip() {
+  const strip = document.getElementById('golfScorecardStrip');
+  if (!strip || !golfHoles.length) return;
+  strip.innerHTML = '';
+
+  golfHoles.forEach((hole, i) => {
+    const score = golfScores[i];
+    const par   = hole.par ? parseInt(hole.par) : null;
+    const isCurrent = i === golfCurrentHole;
+    const isScored  = score !== undefined;
+    const diff = (isScored && par) ? score - par : null;
+
+    // Outer cell
+    const cell = document.createElement('div');
+    cell.style.cssText = `
+      flex-shrink:0; width:32px; height:40px;
+      display:flex; flex-direction:column; align-items:center; justify-content:center;
+      cursor:pointer; border-radius:8px;
+      background:${isCurrent ? 'rgba(255,255,255,0.08)' : 'transparent'};
+      border:${isCurrent ? '1px solid rgba(255,255,255,0.15)' : '1px solid transparent'};
+    `;
+    cell.onclick = () => { golfCurrentHole = i; saveGolfState(); renderHole(); };
+
+    // Hole number (tiny, above)
+    const num = document.createElement('div');
+    num.style.cssText = `font-family:var(--mono); font-size:9px; letter-spacing:0px;
+      color:${isScored ? 'var(--dim)' : isCurrent ? 'var(--mid)' : '#444'}; margin-bottom:2px;`;
+    num.textContent = hole.num || (i + 1);
+    cell.appendChild(num);
+
+    // Score marking (SVG with circle/square)
+    if (isScored) {
+      const svg = buildScoreMarkingSVG(score, diff);
+      cell.appendChild(svg);
+    } else {
+      // Unplayed — grey dash
+      const dash = document.createElement('div');
+      dash.style.cssText = `font-family:var(--mono); font-size:13px; color:#333; line-height:1;`;
+      dash.textContent = '·';
+      cell.appendChild(dash);
+    }
+
+    strip.appendChild(cell);
+  });
+
+  // Scroll current hole into view
+  const cells = strip.children;
+  if (cells[golfCurrentHole]) {
+    cells[golfCurrentHole].scrollIntoView({ block: 'nearest', inline: 'center', behavior: 'smooth' });
+  }
+}
+
+function buildScoreMarkingSVG(score, diff) {
+  const size = 24;
+  const cx = size / 2, cy = size / 2, r = 10;
+  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  svg.setAttribute('width', size);
+  svg.setAttribute('height', size);
+  svg.setAttribute('viewBox', `0 0 ${size} ${size}`);
+
+  // Color
+  const color = diff === null ? '#aaa'
+    : diff < 0  ? '#39ff14'   // under par — green
+    : diff === 0 ? '#888'     // par — grey
+    : '#ff3d71';              // over par — red
+
+  // Score text
+  const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+  text.setAttribute('x', cx);
+  text.setAttribute('y', cy + 4);
+  text.setAttribute('text-anchor', 'middle');
+  text.setAttribute('font-size', '11');
+  text.setAttribute('font-family', 'var(--mono)');
+  text.setAttribute('fill', color);
+  text.textContent = score;
+  svg.appendChild(text);
+
+  if (diff === null || diff === 0) {
+    // Par — no marking
+  } else if (diff === -1) {
+    // Birdie — one circle
+    const c = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    c.setAttribute('cx', cx); c.setAttribute('cy', cy); c.setAttribute('r', r);
+    c.setAttribute('fill', 'none'); c.setAttribute('stroke', color); c.setAttribute('stroke-width', '1.2');
+    svg.insertBefore(c, text);
+  } else if (diff <= -2) {
+    // Eagle or better — two circles
+    const c1 = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    c1.setAttribute('cx', cx); c1.setAttribute('cy', cy); c1.setAttribute('r', r);
+    c1.setAttribute('fill', 'none'); c1.setAttribute('stroke', color); c1.setAttribute('stroke-width', '1.2');
+    const c2 = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    c2.setAttribute('cx', cx); c2.setAttribute('cy', cy); c2.setAttribute('r', r - 2.5);
+    c2.setAttribute('fill', 'none'); c2.setAttribute('stroke', color); c2.setAttribute('stroke-width', '1.2');
+    svg.insertBefore(c1, text);
+    svg.insertBefore(c2, text);
+  } else if (diff === 1) {
+    // Bogey — one square
+    const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+    rect.setAttribute('x', cx - r); rect.setAttribute('y', cy - r);
+    rect.setAttribute('width', r * 2); rect.setAttribute('height', r * 2);
+    rect.setAttribute('rx', '2');
+    rect.setAttribute('fill', 'none'); rect.setAttribute('stroke', color); rect.setAttribute('stroke-width', '1.2');
+    svg.insertBefore(rect, text);
+  } else {
+    // Double bogey or worse — two squares
+    const r2 = r + 2.5;
+    const rect1 = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+    rect1.setAttribute('x', cx - r2); rect1.setAttribute('y', cy - r2);
+    rect1.setAttribute('width', r2 * 2); rect1.setAttribute('height', r2 * 2);
+    rect1.setAttribute('rx', '2');
+    rect1.setAttribute('fill', 'none'); rect1.setAttribute('stroke', color); rect1.setAttribute('stroke-width', '1.2');
+    const rect2 = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+    rect2.setAttribute('x', cx - r); rect2.setAttribute('y', cy - r);
+    rect2.setAttribute('width', r * 2); rect2.setAttribute('height', r * 2);
+    rect2.setAttribute('rx', '2');
+    rect2.setAttribute('fill', 'none'); rect2.setAttribute('stroke', color); rect2.setAttribute('stroke-width', '1.2');
+    svg.insertBefore(rect1, text);
+    svg.insertBefore(rect2, text);
+  }
+
+  return svg;
+}
+
 function renderHole() {
   if (!golfHoles || golfHoles.length === 0) return;
   // Clamp index just in case
@@ -3376,6 +3511,7 @@ function renderHole() {
   document.getElementById('golfParLabel').textContent = meta.join('  ·  ');
 
   renderScore();
+  renderScorecardStrip();
   updateGolfDistances();
 }
 
@@ -3463,7 +3599,11 @@ function updateGolfDistances() {
 function changeHole(dir) {
   if (!golfHoles || golfHoles.length === 0) return;
   const next = golfCurrentHole + dir;
-  if (next < 0 || next >= golfHoles.length) return; // clamp — no wrap
+  if (next < 0 || next >= golfHoles.length) return;
+  // Auto-record par for hole being left if moving forward and no score entered
+  if (dir > 0 && golfScores[golfCurrentHole] === undefined && golfHoles[golfCurrentHole] && golfHoles[golfCurrentHole].par) {
+    golfScores[golfCurrentHole] = parseInt(golfHoles[golfCurrentHole].par);
+  }
   golfCurrentHole = next;
   clearTimeout(teeProximityTimer);
   teeProximityTimer = null;
@@ -3474,6 +3614,27 @@ function changeHole(dir) {
   // Dim arrows at boundaries
   document.getElementById('golfPrevHole').style.opacity = golfCurrentHole === 0 ? '0.3' : '1';
   document.getElementById('golfNextHole').style.opacity = golfCurrentHole === golfHoles.length - 1 ? '0.3' : '1';
+}
+
+function confirmFinishRound() {
+  // Build round summary for the confirmation message
+  let holesPlayed = golfScores.filter(s => s !== undefined).length;
+  let msg = 'Finish round and return to course list?';
+  if (holesPlayed > 0) {
+    let totalStrokes = 0;
+    let totalPar = 0;
+    let parKnown = true;
+    golfHoles.forEach((h, i) => {
+      if (golfScores[i] === undefined) return;
+      totalStrokes += golfScores[i];
+      if (h.par) totalPar += parseInt(h.par);
+      else parKnown = false;
+    });
+    const diff = parKnown && totalPar > 0 ? totalStrokes - totalPar : null;
+    const diffStr = diff === null ? '' : diff === 0 ? ' · EVEN' : diff > 0 ? ' · +' + diff : ' · ' + diff;
+    msg = `Finish round?\n${holesPlayed} holes · ${totalStrokes} strokes${diffStr}`;
+  }
+  if (confirm(msg)) resetGolfSearch();
 }
 
 function resetGolfSearch() {
