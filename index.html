@@ -1661,7 +1661,7 @@ html, body {
 
       <div style="text-align:center; padding: 16px 0 8px; font-family:'DM Mono',monospace; font-size:9px; color:#666; letter-spacing:2px;">
         DIST TRKR · GPS · DISTANCE · TRACKER<br>
-        <span style="color:#777; font-size:11px; letter-spacing:1px;">v1.9.35</span>
+        <span style="color:#777; font-size:11px; letter-spacing:1px;">v1.9.36</span>
       </div>
 
     </div>
@@ -2033,7 +2033,7 @@ function setPointA() {
   stopLive();
   acquiringPoint = true;
 
-  // Clear pointA if re-tapping after a save — keep warmup buffer intact
+  const isRetap = !!pointA; // true if re-tapping after a previous measurement
   if (pointA) pointA = null;
 
   // Reset display to zero immediately on tap
@@ -2044,11 +2044,14 @@ function setPointA() {
   const btn = document.getElementById('btnA');
   btn.style.borderColor = '';
 
-  // Try to use warmup buffer directly — avoids full satellite search
+  // Try warmup buffer first — use relaxed threshold on re-tap since GPS is already running
   const profile = SPEED_PROFILES[currentSpeed];
-  const warmupPos = getWarmupPosition(profile.minSamples, profile.maxAccuracy);
+  const fastProfile = SPEED_PROFILES['fast']; // minimum acceptable: 3 samples at 25m
+  const checkSamples  = isRetap ? fastProfile.minSamples  : profile.minSamples;
+  const checkAccuracy = isRetap ? fastProfile.maxAccuracy : profile.maxAccuracy;
+  const warmupPos = getWarmupPosition(checkSamples, checkAccuracy);
+
   if (warmupPos) {
-    // Instant lock from buffer
     btn.textContent = 'Locating…';
     btn.className = 'point-btn btn-a-loading';
     btn.disabled = true;
