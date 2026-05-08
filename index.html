@@ -1661,7 +1661,7 @@ html, body {
 
       <div style="text-align:center; padding: 16px 0 8px; font-family:'DM Mono',monospace; font-size:9px; color:#666; letter-spacing:2px;">
         DIST TRKR · GPS · DISTANCE · TRACKER<br>
-        <span style="color:#777; font-size:11px; letter-spacing:1px;">v1.9.38</span>
+        <span style="color:#777; font-size:11px; letter-spacing:1px;">v1.9.39</span>
       </div>
 
     </div>
@@ -3163,8 +3163,15 @@ function selectCourse(name, greens, tees, holes) {
 }
 
 function renderHole() {
+  if (!golfHoles || golfHoles.length === 0) return;
+  // Clamp index just in case
+  if (golfCurrentHole < 0) golfCurrentHole = 0;
+  if (golfCurrentHole >= golfHoles.length) golfCurrentHole = golfHoles.length - 1;
+
   const hole = golfHoles[golfCurrentHole];
-  document.getElementById('golfHoleNum').textContent = hole.num;
+  if (!hole) return;
+
+  document.getElementById('golfHoleNum').textContent = hole.num || (golfCurrentHole + 1);
   let meta = [];
   if (hole.par) meta.push('PAR ' + hole.par);
   if (hole.handicap) meta.push('HCP ' + hole.handicap);
@@ -3263,6 +3270,7 @@ function updateGolfDistances() {
 
 
 function changeHole(dir) {
+  if (!golfHoles || golfHoles.length === 0) return;
   golfCurrentHole = (golfCurrentHole + dir + golfHoles.length) % golfHoles.length;
   clearTimeout(teeProximityTimer);
   teeProximityTimer = null;
