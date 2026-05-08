@@ -1680,7 +1680,7 @@ html, body {
 
       <div style="text-align:center; padding: 16px 0 8px; font-family:'DM Mono',monospace; font-size:9px; color:#666; letter-spacing:2px;">
         DIST TRKR · GPS · DISTANCE · TRACKER<br>
-        <span style="color:#777; font-size:11px; letter-spacing:1px;">v1.9.43</span>
+        <span style="color:#777; font-size:11px; letter-spacing:1px;">v1.9.47</span>
       </div>
 
     </div>
@@ -2873,8 +2873,8 @@ function adjustScore(delta) {
   const hole = golfHoles[golfCurrentHole];
   if (!hole) return;
   if (golfScores[golfCurrentHole] === undefined) {
-    // Start from par if set, otherwise 0
-    golfScores[golfCurrentHole] = hole.par ? hole.par : 0;
+    // Start from par as a number, or 0 if no par
+    golfScores[golfCurrentHole] = hole.par ? parseInt(hole.par) : 0;
   }
   golfScores[golfCurrentHole] = Math.max(1, golfScores[golfCurrentHole] + delta);
   renderScore();
@@ -2890,13 +2890,13 @@ function renderScore() {
 
   const score = golfScores[golfCurrentHole];
   if (score === undefined) {
-    scoreEl.textContent  = hole.par || '—';
+    scoreEl.textContent  = hole.par ? parseInt(hole.par) : '—';
     scoreEl.style.color  = 'var(--text)';
     diffEl.textContent   = hole.par ? 'TAP +/− TO SCORE' : 'NO PAR DATA';
     diffEl.style.color   = 'var(--dim)';
   } else {
     scoreEl.textContent = score;
-    const par = hole.par;
+    const par = hole.par ? parseInt(hole.par) : null;
     if (par) {
       const diff = score - par;
       if (diff === 0) {
@@ -2928,7 +2928,7 @@ function renderScore() {
   const totalStrokes = played.reduce((s,v) => s+v, 0);
   const totalPar = golfHoles.slice(0, golfScores.length)
     .filter((h,i) => golfScores[i] !== undefined && h.par)
-    .reduce((s,h) => s + h.par, 0);
+    .reduce((s,h) => s + parseInt(h.par), 0);
   const roundDiff = totalStrokes - totalPar;
   const diffStr = totalPar > 0
     ? (roundDiff === 0 ? 'EVEN' : (roundDiff > 0 ? '+' + roundDiff : '' + roundDiff))
@@ -3068,7 +3068,7 @@ function findNearbyCourses() {
 
 function fetchCoursesNear(lat, lon) {
   const statusEl = document.getElementById('golfSearchStatus');
-  const radius = 5000; // 5km
+  const radius = 20000; // 20km
 
   // Query for golf courses with hole (green) data
   const query = `[out:json][timeout:30];
@@ -3161,10 +3161,10 @@ function fetchHoleDataByProximity(courses, lat, lon) {
   const statusEl = document.getElementById('golfSearchStatus');
   const query = `[out:json][timeout:30];
 (
-  way[golf=green](around:5000,${lat},${lon});
-  way[golf=tee](around:5000,${lat},${lon});
-  node[golf=tee](around:5000,${lat},${lon});
-  way[golf=hole](around:5000,${lat},${lon});
+  way[golf=green](around:1500,${lat},${lon});
+  way[golf=tee](around:1500,${lat},${lon});
+  node[golf=tee](around:1500,${lat},${lon});
+  way[golf=hole](around:1500,${lat},${lon});
 );
 out center tags;`;
 
@@ -3264,7 +3264,7 @@ function showCourseList(courses, greens, tees, holes, userLat, userLon) {
     // Take the nearest green as seed, then keep all greens within 2km of that seed
     const seed = withDist[0];
     return allGreens.filter(g =>
-      golfHaversine(seed.center.lat, seed.center.lon, g.center.lat, g.center.lon) <= 2000
+      golfHaversine(seed.center.lat, seed.center.lon, g.center.lat, g.center.lon) <= 3000
     );
   }
 
