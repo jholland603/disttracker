@@ -1680,7 +1680,7 @@ html, body {
 
       <div style="text-align:center; padding: 16px 0 8px; font-family:'DM Mono',monospace; font-size:9px; color:#666; letter-spacing:2px;">
         DIST TRKR · GPS · DISTANCE · TRACKER<br>
-        <span style="color:#777; font-size:11px; letter-spacing:1px;">v1.9.50</span>
+        <span style="color:#777; font-size:11px; letter-spacing:1px;">v1.9.51</span>
       </div>
 
     </div>
@@ -3244,23 +3244,52 @@ function showCourseList(courses, greens, tees, holes, userLat, userLon) {
 function selectCourse(name, allGreens, tees, holes, courseEl) {
   golfCourseName = name;
   document.getElementById('golfCourseName').textContent = name;
+  document.getElementById('golfSearchStatus').textContent = 'Loading hole data for ' + name + '…';
+  document.getElementById('golfCourseList').style.display = 'none';
+  document.getElementById('golfSearch').style.display = 'none';
 
-  // Filter greens to this course by proximity to course center
-  // Course center comes from OSM bounds if available, else centroid of all greens
-  let greens = allGreens;
-  if (allGreens.length > 18 && courseEl) {
-    // Find greens nearest to this course's center
-    const cLat = courseEl.center ? courseEl.center.lat
-      : allGreens.reduce((s,g) => s + g.center.lat, 0) / allGreens.length;
-    const cLon = courseEl.center ? courseEl.center.lon
-      : allGreens.reduce((s,g) => s + g.center.lon, 0) / allGreens.length;
-    // Keep greens within 3km of this course center
-    const nearby = allGreens.filter(g =>
-      golfHaversine(cLat, cLon, g.center.lat, g.center.lon) <= 3000
-    );
-    if (nearby.length > 0) greens = nearby;
-  }
+  // Fetch hole data scoped specifically to this course using its OSM ID
+  const areaSetup = courseEl.type === 'relation'
+    ? `relation(${courseEl.id});map_to_area->.course;`
+    : `way(${courseEl.id});map_to_area->.course;`;
 
+  const query = `[out:json][timeout:30];
+${areaSetup}
+(
+  way[golf=green](area.course);
+  way[golf=tee](area.course);
+  node[golf=tee](area.course);
+  way[golf=hole](area.course);
+);
+out center tags;`;
+
+  fetch('https://overpass-api.de/api/interpreter', {
+    method: 'POST',
+    body: query
+  })
+  .then(r => r.json())
+  .then(data => {
+    const greens = (data.elements || []).filter(e => e.tags && e.tags.golf === 'green' && e.center);
+    const courseTees  = (data.elements || []).filter(e => e.tags && e.tags.golf === 'tee' && (e.center || (e.lat && e.lon)));
+    const courseHoles = (data.elements || []).filter(e => e.tags && e.tags.golf === 'hole' && e.tags.ref);
+
+    if (greens.length === 0) {
+      // Area query failed — fall back to the pre-fetched greens filtered by course center
+      document.getElementById('golfSearchStatus').textContent = '';
+      buildCourseHoles(name, allGreens, tees, holes, courseEl);
+      return;
+    }
+
+    document.getElementById('golfSearchStatus').textContent = '';
+    buildCourseHoles(name, greens, courseTees, courseHoles, courseEl);
+  })
+  .catch(() => {
+    document.getElementById('golfSearchStatus').textContent = '';
+    buildCourseHoles(name, allGreens, tees, holes, courseEl);
+  });
+}
+
+function buildCourseHoles(name, greens, tees, holes, courseEl) {
   // Sort greens by hole ref number
   const sorted = [...greens].sort((a, b) => {
     const ra = parseInt(a.tags && a.tags.ref) || 999;
@@ -3281,7 +3310,6 @@ function selectCourse(name, allGreens, tees, holes, courseEl) {
     const centerLat = g.center.lat;
     const centerLon = g.center.lon;
 
-    // Match tees by ref tag OR by name tag like "T10" -> hole 10
     const holeTees = tees.filter(t => {
       if (!t.tags) return false;
       if (t.tags.ref && parseInt(t.tags.ref) === ref) return true;
@@ -3298,7 +3326,6 @@ function selectCourse(name, allGreens, tees, holes, courseEl) {
       label: t.tags.colour || t.tags.color || t.tags['golf:tee'] || t.tags.tee || null
     }));
 
-    // Deduplicate tees by approximate position (same tee polygon mapped twice)
     const uniqueTees = teeCenters.filter((t, idx, arr) =>
       arr.findIndex(u => Math.abs(u.lat - t.lat) < 0.00003 && Math.abs(u.lon - t.lon) < 0.00003) === idx
     );
@@ -3316,13 +3343,13 @@ function selectCourse(name, allGreens, tees, holes, courseEl) {
 
   if (golfHoles.length === 0) {
     document.getElementById('golfSearchStatus').textContent = 'No hole data found for this course.';
+    document.getElementById('golfCourseList').style.display = 'flex';
     return;
   }
 
   golfCurrentHole = 0;
   golfScores      = [];
   saveGolfState();
-  document.getElementById('golfCourseList').style.display = 'none';
   const hv = document.getElementById('golfHoleView');
   hv.style.display = 'flex';
   hv.style.flexDirection = 'column';
