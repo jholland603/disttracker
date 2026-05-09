@@ -381,17 +381,7 @@
           -webkit-tap-highlight-color:transparent;">Keep Awake</button>
       </div>
 
-      <!-- Weather widget -->
-      <button id="weatherWidget" onclick="openWeatherModal()" style="
-        display:flex; align-items:center; gap:6px;
-        font-family:var(--mono); font-size:12px; padding:6px 12px;
-        border-radius:10px; border:1px solid rgba(255,255,255,0.12);
-        background:rgba(255,255,255,0.05); color:#bbb; cursor:pointer;
-        -webkit-tap-highlight-color:transparent; flex-shrink:0;">
-        <span id="weatherIcon">⛅</span>
-        <span id="weatherTemp">--°</span>
-      </button>
-
+      <!-- YD/M selector — center -->
       <div style="display:flex; gap:8px; align-items:center;">
         <button id="golfUnitToggle" onclick="toggleGolfUnit()" style="
           font-family:var(--mono); font-size:11px; padding:5px 12px;
@@ -399,6 +389,17 @@
           background:rgba(0,229,255,0.08); color:var(--accent); cursor:pointer;
           -webkit-tap-highlight-color:transparent;">YD</button>
       </div>
+
+      <!-- Weather widget — right -->
+      <button id="weatherWidget" onclick="openWeatherModal()" style="
+        display:flex; align-items:center; gap:6px;
+        font-family:var(--mono); font-size:12px; padding:8px 18px;
+        border-radius:10px; border:1.5px solid rgba(255,255,255,0.15);
+        background:rgba(255,255,255,0.05); color:#bbb; cursor:pointer; font-weight:600;
+        -webkit-tap-highlight-color:transparent; flex-shrink:0;">
+        <span id="weatherIcon">⛅</span>
+        <span id="weatherTemp">--°</span>
+      </button>
     </div>
 
     <!-- Weather modal -->
