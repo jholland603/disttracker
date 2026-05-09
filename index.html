@@ -380,12 +380,61 @@
           background:rgba(255,255,255,0.05); color:#bbb; cursor:pointer; font-weight:600;
           -webkit-tap-highlight-color:transparent;">Keep Awake</button>
       </div>
+
+      <!-- Weather widget -->
+      <button id="weatherWidget" onclick="openWeatherModal()" style="
+        display:flex; align-items:center; gap:6px;
+        font-family:var(--mono); font-size:12px; padding:6px 12px;
+        border-radius:10px; border:1px solid rgba(255,255,255,0.12);
+        background:rgba(255,255,255,0.05); color:#bbb; cursor:pointer;
+        -webkit-tap-highlight-color:transparent; flex-shrink:0;">
+        <span id="weatherIcon">⛅</span>
+        <span id="weatherTemp">--°</span>
+      </button>
+
       <div style="display:flex; gap:8px; align-items:center;">
         <button id="golfUnitToggle" onclick="toggleGolfUnit()" style="
           font-family:var(--mono); font-size:11px; padding:5px 12px;
           border-radius:8px; border:1px solid rgba(0,229,255,0.3);
           background:rgba(0,229,255,0.08); color:var(--accent); cursor:pointer;
           -webkit-tap-highlight-color:transparent;">YD</button>
+      </div>
+    </div>
+
+    <!-- Weather modal -->
+    <div id="weatherModal" style="
+      display:none; position:fixed; inset:0; z-index:999;
+      background:rgba(0,0,0,0.75); backdrop-filter:blur(4px);
+      align-items:flex-end; justify-content:center;">
+      <div style="
+        background:#1a1a1e; border-radius:20px 20px 0 0;
+        width:100%; max-width:480px; padding:20px 16px 32px;
+        border-top:1px solid rgba(255,255,255,0.1);">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+          <div>
+            <div id="weatherModalTitle" style="font-family:var(--display); font-size:18px; font-weight:800; color:var(--text);">Current Weather</div>
+            <div id="weatherModalSub" style="font-family:var(--mono); font-size:11px; color:var(--dim); margin-top:2px;"></div>
+          </div>
+          <button onclick="closeWeatherModal()" style="
+            background:rgba(255,255,255,0.08); border:none; color:#bbb;
+            font-size:18px; width:34px; height:34px; border-radius:50%;
+            cursor:pointer; -webkit-tap-highlight-color:transparent;">✕</button>
+        </div>
+        <!-- Current conditions -->
+        <div id="weatherCurrent" style="
+          display:flex; align-items:center; gap:16px;
+          background:rgba(255,255,255,0.05); border-radius:14px;
+          padding:16px; margin-bottom:16px;">
+          <div id="weatherModalIcon" style="font-size:40px; line-height:1;">⛅</div>
+          <div>
+            <div id="weatherModalTemp" style="font-family:var(--display); font-size:32px; font-weight:800; color:var(--text);"></div>
+            <div id="weatherModalDesc" style="font-family:var(--sans); font-size:13px; color:var(--mid); margin-top:2px;"></div>
+            <div id="weatherModalWind" style="font-family:var(--mono); font-size:11px; color:var(--dim); margin-top:4px;"></div>
+          </div>
+        </div>
+        <!-- Hourly forecast -->
+        <div style="font-family:var(--mono); font-size:10px; color:var(--dim); letter-spacing:1px; margin-bottom:8px;">NEXT 12 HOURS</div>
+        <div id="weatherHourly" style="display:flex; gap:8px; overflow-x:auto; padding-bottom:4px;"></div>
       </div>
     </div>
 
@@ -688,7 +737,7 @@
 
       <div style="text-align:center; padding: 16px 0 8px; font-family:'DM Mono',monospace; font-size:9px; color:#666; letter-spacing:2px;">
         DIST TRKR · GPS · DISTANCE · TRACKER<br>
-        <span style="color:#777; font-size:11px; letter-spacing:1px;">v2.0.1</span>
+        <span style="color:#777; font-size:11px; letter-spacing:1px;">v2.0.3</span>
       </div>
 
     </div>

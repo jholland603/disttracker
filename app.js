@@ -574,18 +574,30 @@ function addLogRow(entry) {
 
   const item = document.createElement('div');
   item.className = 'log-item';
+  let _badge, _badgeLabel, _right;
+  if (entry.type === 'golf') {
+    _badge = 'background:rgba(0,200,100,0.15);color:#00c864;border:1px solid rgba(0,200,100,0.3);';
+    _badgeLabel = 'GOLF';
+    const _sc = !entry.diffLabel || entry.diffLabel === 'EVEN' ? 'var(--dim)' : entry.diff > 0 ? 'var(--red)' : 'var(--green)';
+    _right = `<div class="log-dist-wrap"><div class="log-dist" style="color:${_sc};">${entry.diffLabel || entry.totalStrokes}</div><div class="log-dist-unit">${entry.holesPlayed} holes</div></div>`;
+  } else if (entry.type === 'route') {
+    _badge = 'background:rgba(255,190,0,0.15);color:#ffbe00;border:1px solid rgba(255,190,0,0.3);';
+    _badgeLabel = 'ROUTE';
+    _right = `<div class="log-dist-wrap"><div class="log-dist">${fmt(entry.meters)}</div><div class="log-dist-unit">${unitLabels[unit].toLowerCase()}</div></div>`;
+  } else {
+    _badge = 'background:rgba(0,229,255,0.1);color:var(--accent);border:1px solid rgba(0,229,255,0.2);';
+    _badgeLabel = 'POINT TO POINT';
+    _right = `<div class="log-dist-wrap"><div class="log-dist">${fmt(entry.meters)}</div><div class="log-dist-unit">${unitLabels[unit].toLowerCase()}</div></div>`;
+  }
   item.innerHTML = `
     <div class="log-num">#${String(entry.id).padStart(2,'0')}</div>
     <div class="log-info">
       <div class="log-name">${entry.name}</div>
       <div class="log-meta">
-        <span style="font-family:var(--mono);font-size:9px;letter-spacing:1px;padding:1px 5px;border-radius:4px;margin-right:5px;${entry.type==='route' ? 'background:rgba(255,190,0,0.15);color:#ffbe00;border:1px solid rgba(255,190,0,0.3);' : 'background:rgba(0,229,255,0.1);color:var(--accent);border:1px solid rgba(0,229,255,0.2);'}">${entry.type==='route' ? 'ROUTE' : 'POINT TO POINT'}</span>${entry.date} · ${entry.time}
+        <span style="font-family:var(--mono);font-size:9px;letter-spacing:1px;padding:1px 5px;border-radius:4px;margin-right:5px;${_badge}">${_badgeLabel}</span>${entry.date} · ${entry.time}
       </div>
     </div>
-    <div class="log-dist-wrap">
-      <div class="log-dist">${fmt(entry.meters)}</div>
-      <div class="log-dist-unit">${unitLabels[unit].toLowerCase()}</div>
-    </div>
+    ${_right}
     <div class="log-chevron">›</div>`;
   item.onclick = () => openDetail(entry.id);
 
@@ -657,18 +669,30 @@ function rebuildLog() {
 
     const item = document.createElement('div');
     item.className = 'log-item';
+    let _b2, _bl2, _r2;
+    if (entry.type === 'golf') {
+      _b2 = 'background:rgba(0,200,100,0.15);color:#00c864;border:1px solid rgba(0,200,100,0.3);';
+      _bl2 = 'GOLF';
+      const _sc2 = !entry.diffLabel || entry.diffLabel === 'EVEN' ? 'var(--dim)' : entry.diff > 0 ? 'var(--red)' : 'var(--green)';
+      _r2 = `<div class="log-dist-wrap"><div class="log-dist" style="color:${_sc2};">${entry.diffLabel || entry.totalStrokes}</div><div class="log-dist-unit">${entry.holesPlayed} holes</div></div>`;
+    } else if (entry.type === 'route') {
+      _b2 = 'background:rgba(255,190,0,0.15);color:#ffbe00;border:1px solid rgba(255,190,0,0.3);';
+      _bl2 = 'ROUTE';
+      _r2 = `<div class="log-dist-wrap"><div class="log-dist">${fmt(entry.meters)}</div><div class="log-dist-unit">${unitLabels[unit].toLowerCase()}</div></div>`;
+    } else {
+      _b2 = 'background:rgba(0,229,255,0.1);color:var(--accent);border:1px solid rgba(0,229,255,0.2);';
+      _bl2 = 'POINT TO POINT';
+      _r2 = `<div class="log-dist-wrap"><div class="log-dist">${fmt(entry.meters)}</div><div class="log-dist-unit">${unitLabels[unit].toLowerCase()}</div></div>`;
+    }
     item.innerHTML = `
       <div class="log-num">#${String(entry.id).padStart(2,'0')}</div>
       <div class="log-info">
         <div class="log-name">${entry.name}</div>
         <div class="log-meta">
-          <span style="font-family:var(--mono);font-size:9px;letter-spacing:1px;padding:1px 5px;border-radius:4px;margin-right:5px;${entry.type==='route' ? 'background:rgba(255,190,0,0.15);color:#ffbe00;border:1px solid rgba(255,190,0,0.3);' : 'background:rgba(0,229,255,0.1);color:var(--accent);border:1px solid rgba(0,229,255,0.2);'}">${entry.type==='route' ? 'ROUTE' : 'POINT TO POINT'}</span>${entry.date} · ${entry.time}
+          <span style="font-family:var(--mono);font-size:9px;letter-spacing:1px;padding:1px 5px;border-radius:4px;margin-right:5px;${_b2}">${_bl2}</span>${entry.date} · ${entry.time}
         </div>
       </div>
-      <div class="log-dist-wrap">
-        <div class="log-dist">${fmt(entry.meters)}</div>
-        <div class="log-dist-unit">${unitLabels[unit].toLowerCase()}</div>
-      </div>
+      ${_r2}
       <div class="log-chevron">›</div>`;
     item.onclick = () => openDetail(entry.id);
 
@@ -722,13 +746,49 @@ function openDetail(id) {
   prevTab = document.getElementById('screenLog').classList.contains('active') ? 'log' : 'measure';
 
   document.getElementById('detailName').textContent = m.name;
-  document.getElementById('detailDist').textContent = fmt(m.meters);
-  document.getElementById('detailUnit').textContent = unitLabels[unit];
+  if (m.type === 'golf') {
+    document.getElementById('detailDist').textContent = m.diffLabel || m.totalStrokes;
+    document.getElementById('detailUnit').textContent = m.holesPlayed + ' holes';
+  } else {
+    document.getElementById('detailDist').textContent = fmt(m.meters);
+    document.getElementById('detailUnit').textContent = unitLabels[unit];
+  }
   document.getElementById('detailDate').textContent = m.date + ' · ' + m.time;
 
   const cards = document.getElementById('detailCards');
 
-  if (m.type === 'route') {
+  if (m.type === 'golf') {
+    // Golf round detail view — scorecard
+    const scoreColor = !m.diffLabel || m.diffLabel === 'EVEN' ? 'var(--dim)'
+                     : m.diff > 0 ? 'var(--red)' : 'var(--green)';
+    let rows = '';
+    (m.scorecard || []).forEach(h => {
+      if (h.score === null) return;
+      const rel = h.par ? h.score - h.par : null;
+      const relStr = rel === null ? '' : rel === 0 ? 'E' : rel > 0 ? '+'+rel : ''+rel;
+      const relColor = rel === null ? '' : rel === 0 ? 'var(--dim)' : rel > 0 ? 'var(--red)' : 'var(--green)';
+      rows += `<div class="detail-row">
+        <span class="detail-key">Hole ${h.num}${h.par ? ' · Par '+h.par : ''}${h.handicap ? ' · Hcp '+h.handicap : ''}</span>
+        <span class="detail-val" style="display:flex;gap:10px;align-items:center;">
+          <span>${h.score}</span>
+          ${relStr ? `<span style="font-size:11px;color:${relColor};">${relStr}</span>` : ''}
+        </span>
+      </div>`;
+    });
+    cards.innerHTML = `
+      <div class="detail-card">
+        <div class="detail-card-label">Round Summary</div>
+        <div class="detail-row"><span class="detail-key">Course</span><span class="detail-val">${m.name}</span></div>
+        <div class="detail-row"><span class="detail-key">Holes Played</span><span class="detail-val">${m.holesPlayed}</span></div>
+        <div class="detail-row"><span class="detail-key">Total Strokes</span><span class="detail-val">${m.totalStrokes}</span></div>
+        ${m.totalPar ? `<div class="detail-row"><span class="detail-key">Total Par</span><span class="detail-val">${m.totalPar}</span></div>` : ''}
+        ${m.diffLabel ? `<div class="detail-row"><span class="detail-key">Score vs Par</span><span class="detail-val" style="color:${scoreColor};font-weight:700;">${m.diffLabel}</span></div>` : ''}
+      </div>
+      <div class="detail-card">
+        <div class="detail-card-label">Scorecard</div>
+        ${rows}
+      </div>`;
+  } else if (m.type === 'route') {
     // Route detail view
     cards.innerHTML = `
       <div class="detail-card">
@@ -1166,6 +1226,7 @@ let golfWatchId     = null;
 let golfCurrentPos  = null;
 let golfHoles       = [];     // array of hole objects for selected course
 let golfCurrentHole = 0;      // index into golfHoles
+let golfStartHole   = 0;      // index of the hole the round started on
 let golfCourseName  = '';
 let golfScores      = [];     // stroke counts per hole, index matches golfHoles
 
@@ -1294,6 +1355,7 @@ function startGolfGpsWatch() {
   golfWatchId = navigator.geolocation.watchPosition(
     pos => {
       golfCurrentPos = {lat: pos.coords.latitude, lon: pos.coords.longitude, acc: pos.coords.accuracy};
+      fetchWeather(golfCurrentPos.lat, golfCurrentPos.lon);
       if (golfHoles.length > 0) {
         updateGolfDistances();
         checkTeeProximity(golfCurrentPos.lat, golfCurrentPos.lon);
@@ -1333,7 +1395,7 @@ function checkTeeProximity(lat, lon) {
       if (teeProximityHole === closestHoleIdx) {
         const prevHole = golfCurrentHole;
         // Auto-record par for the hole we're leaving if no score entered
-        if (golfScores[prevHole] === undefined && golfHoles[prevHole] && golfHoles[prevHole].par) {
+        if (golfScores[prevHole] === undefined && prevHole >= golfStartHole && golfHoles[prevHole] && golfHoles[prevHole].par) {
           golfScores[prevHole] = parseInt(golfHoles[prevHole].par);
         }
         golfCurrentHole = closestHoleIdx;
@@ -1370,6 +1432,7 @@ function stopGolfGpsWatch() {
     navigator.geolocation.clearWatch(golfWatchId);
     golfWatchId = null;
   }
+  weatherFetched = false;
 }
 
 // Find nearby courses via Overpass API
@@ -1627,6 +1690,7 @@ function showStartHolePrompt() {
 
 function confirmStartHole(idx) {
   golfCurrentHole = idx;
+  golfStartHole   = idx;
   golfScores      = [];
   saveGolfState();
 
@@ -1871,7 +1935,7 @@ function changeHole(dir) {
   const next = golfCurrentHole + dir;
   if (next < 0 || next >= golfHoles.length) return;
   // Auto-record par for hole being left if moving forward and no score entered
-  if (dir > 0 && golfScores[golfCurrentHole] === undefined && golfHoles[golfCurrentHole] && golfHoles[golfCurrentHole].par) {
+  if (dir > 0 && golfScores[golfCurrentHole] === undefined && golfCurrentHole >= golfStartHole && golfHoles[golfCurrentHole] && golfHoles[golfCurrentHole].par) {
     golfScores[golfCurrentHole] = parseInt(golfHoles[golfCurrentHole].par);
   }
   golfCurrentHole = next;
@@ -1887,29 +1951,77 @@ function changeHole(dir) {
 }
 
 function confirmFinishRound() {
-  // Build round summary for the confirmation message
   let holesPlayed = golfScores.filter(s => s !== undefined).length;
-  let msg = 'Finish round and return to course list?';
+  let totalStrokes = 0;
+  let totalPar = 0;
+  let parKnown = true;
+  golfHoles.forEach((h, i) => {
+    if (golfScores[i] === undefined) return;
+    totalStrokes += golfScores[i];
+    if (h.par) totalPar += parseInt(h.par);
+    else parKnown = false;
+  });
+  const diff = parKnown && totalPar > 0 ? totalStrokes - totalPar : null;
+  const diffStr = diff === null ? '' : diff === 0 ? ' · EVEN' : diff > 0 ? ' · +' + diff : ' · ' + diff;
+
+  const msg = holesPlayed > 0
+    ? `Finish round?\n${holesPlayed} holes · ${totalStrokes} strokes${diffStr}\n\nSave this round to your Log?`
+    : 'Finish round and return to course list?';
+
   if (holesPlayed > 0) {
-    let totalStrokes = 0;
-    let totalPar = 0;
-    let parKnown = true;
-    golfHoles.forEach((h, i) => {
-      if (golfScores[i] === undefined) return;
-      totalStrokes += golfScores[i];
-      if (h.par) totalPar += parseInt(h.par);
-      else parKnown = false;
-    });
-    const diff = parKnown && totalPar > 0 ? totalStrokes - totalPar : null;
-    const diffStr = diff === null ? '' : diff === 0 ? ' · EVEN' : diff > 0 ? ' · +' + diff : ' · ' + diff;
-    msg = `Finish round?\n${holesPlayed} holes · ${totalStrokes} strokes${diffStr}`;
+    // Use a two-step confirm: finish + offer save
+    if (!confirm(`Finish round?\n${holesPlayed} holes · ${totalStrokes} strokes${diffStr}`)) return;
+    if (confirm('Save this round to your Log?')) {
+      saveGolfRoundToLog(holesPlayed, totalStrokes, totalPar, parKnown, diff);
+    }
+  } else {
+    if (!confirm(msg)) return;
   }
-  if (confirm(msg)) resetGolfSearch();
+  resetGolfSearch();
+}
+
+function saveGolfRoundToLog(holesPlayed, totalStrokes, totalPar, parKnown, diff) {
+  measureCount++;
+  const now  = new Date();
+  const time = now.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit', second:'2-digit'});
+  const date = now.toLocaleDateString([], {month:'short', day:'numeric', year:'numeric'});
+
+  // Build per-hole scorecard snapshot
+  const scorecard = golfHoles.map((h, i) => ({
+    num:      h.num || (i + 1),
+    par:      h.par ? parseInt(h.par) : null,
+    score:    golfScores[i] !== undefined ? golfScores[i] : null,
+    handicap: h.handicap || null
+  }));
+
+  const diffLabel = diff === null ? '' : diff === 0 ? 'EVEN' : (diff > 0 ? '+' + diff : '' + diff);
+  const name = golfCourseName || 'Golf Round';
+
+  const entry = {
+    id:          measureCount,
+    name,
+    type:        'golf',
+    date,
+    time,
+    meters:      0,          // not applicable but keep structure consistent
+    holesPlayed,
+    totalStrokes,
+    totalPar:    parKnown ? totalPar : null,
+    diff:        diff,
+    diffLabel,
+    scorecard
+  };
+
+  measurements.push(entry);
+  saveToStorage();
+  addLogRow(entry);
+  switchTab('log');
 }
 
 function resetGolfSearch() {
   golfHoles = [];
   golfCurrentHole = 0;
+  golfStartHole   = 0;
   golfScores = [];
   golfCourseName = '';
   clearGolfState();
@@ -1920,6 +2032,124 @@ function resetGolfSearch() {
   document.getElementById('golfSearchStatus').textContent = '';
 }
 
+
+// ── WEATHER ────────────────────────────────────────────────
+
+let weatherData = null;
+let weatherFetched = false;
+
+const WMO_CODES = {
+  0:  ['☀️',  'Clear'],
+  1:  ['🌤️', 'Mostly Clear'],
+  2:  ['⛅',  'Partly Cloudy'],
+  3:  ['☁️',  'Overcast'],
+  45: ['🌫️', 'Foggy'],
+  48: ['🌫️', 'Icy Fog'],
+  51: ['🌦️', 'Light Drizzle'],
+  53: ['🌦️', 'Drizzle'],
+  55: ['🌧️', 'Heavy Drizzle'],
+  61: ['🌧️', 'Light Rain'],
+  63: ['🌧️', 'Rain'],
+  65: ['🌧️', 'Heavy Rain'],
+  71: ['🌨️', 'Light Snow'],
+  73: ['🌨️', 'Snow'],
+  75: ['❄️',  'Heavy Snow'],
+  80: ['🌦️', 'Rain Showers'],
+  81: ['🌧️', 'Showers'],
+  82: ['⛈️',  'Heavy Showers'],
+  95: ['⛈️',  'Thunderstorm'],
+  96: ['⛈️',  'Thunderstorm'],
+  99: ['⛈️',  'Severe Storm'],
+};
+
+function wmoLabel(code) {
+  return WMO_CODES[code] || ['🌡️', 'Unknown'];
+}
+
+function fetchWeather(lat, lon) {
+  if (weatherFetched) return;
+  weatherFetched = true;
+  const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}`
+    + `&current=temperature_2m,weathercode,windspeed_10m,winddirection_10m`
+    + `&hourly=temperature_2m,weathercode`
+    + `&temperature_unit=fahrenheit&windspeed_unit=mph&timezone=auto&forecast_days=1`;
+
+  fetch(url)
+    .then(r => r.json())
+    .then(data => {
+      weatherData = data;
+      renderWeatherWidget();
+    })
+    .catch(() => {
+      document.getElementById('weatherTemp').textContent = '--°';
+    });
+}
+
+function renderWeatherWidget() {
+  if (!weatherData) return;
+  const c = weatherData.current;
+  const [icon] = wmoLabel(c.weathercode);
+  const temp = Math.round(c.temperature_2m);
+  document.getElementById('weatherIcon').textContent = icon;
+  document.getElementById('weatherTemp').textContent = temp + '°';
+}
+
+function openWeatherModal() {
+  if (!weatherData) {
+    // Try to fetch if we have position
+    const pos = golfCurrentPos;
+    if (pos) { weatherFetched = false; fetchWeather(pos.lat, pos.lon); }
+    return;
+  }
+  const c = weatherData.current;
+  const [icon, desc] = wmoLabel(c.weathercode);
+  const temp = Math.round(c.temperature_2m);
+  const wind = Math.round(c.windspeed_10m);
+
+  document.getElementById('weatherModalIcon').textContent = icon;
+  document.getElementById('weatherModalTemp').textContent = temp + '°F';
+  document.getElementById('weatherModalDesc').textContent = desc;
+  document.getElementById('weatherModalWind').textContent = `Wind ${wind} mph`;
+  document.getElementById('weatherModalSub').textContent =
+    weatherData.timezone ? weatherData.timezone.replace('_', ' ') : '';
+
+  // Hourly — next 12 hours from now
+  const now = new Date();
+  const nowHour = now.getHours();
+  const times   = weatherData.hourly.time;
+  const temps   = weatherData.hourly.temperature_2m;
+  const codes   = weatherData.hourly.weathercode;
+
+  const hourly = document.getElementById('weatherHourly');
+  hourly.innerHTML = '';
+  let count = 0;
+  for (let i = 0; i < times.length && count < 12; i++) {
+    const h = new Date(times[i]).getHours();
+    const t = new Date(times[i]);
+    if (t < now) continue;
+    count++;
+    const [hIcon] = wmoLabel(codes[i]);
+    const hTemp = Math.round(temps[i]);
+    const label = t.toLocaleTimeString([], {hour:'numeric', hour12:true});
+    const col = document.createElement('div');
+    col.style.cssText = `
+      flex-shrink:0; display:flex; flex-direction:column; align-items:center; gap:4px;
+      background:rgba(255,255,255,0.05); border-radius:12px; padding:10px 12px;
+      min-width:58px;`;
+    col.innerHTML = `
+      <div style="font-family:var(--mono);font-size:10px;color:var(--dim);">${label}</div>
+      <div style="font-size:20px;">${hIcon}</div>
+      <div style="font-family:var(--sans);font-size:13px;font-weight:700;color:var(--text);">${hTemp}°</div>`;
+    hourly.appendChild(col);
+  }
+
+  const modal = document.getElementById('weatherModal');
+  modal.style.display = 'flex';
+}
+
+function closeWeatherModal() {
+  document.getElementById('weatherModal').style.display = 'none';
+}
 
 // ── WAKE LOCK ──────────────────────────────────────────
 
