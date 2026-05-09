@@ -2087,51 +2087,54 @@ function fetchWeather(lat, lon) {
 
 function renderWeatherWidget() {
   if (!weatherData) return;
-  const c = weatherData.current;
-  const [icon] = wmoLabel(c.weathercode);
-  const temp = Math.round(c.temperature_2m);
+  const c = weatherData.current || weatherData.current_weather || {};
+  const code = c.weathercode ?? c.weather_code ?? 0;
+  const tempRaw = c.temperature_2m ?? c.temperature ?? null;
+  if (tempRaw === null) return;
+  const [icon] = wmoLabel(code);
+  const temp = Math.round(tempRaw);
   document.getElementById('weatherIcon').textContent = icon;
   document.getElementById('weatherTemp').textContent = temp + '°';
 }
 
 function openWeatherModal() {
   if (!weatherData) {
-    // Try to fetch if we have position
     const pos = golfCurrentPos;
     if (pos) { weatherFetched = false; fetchWeather(pos.lat, pos.lon); }
     return;
   }
-  const c = weatherData.current;
-  const [icon, desc] = wmoLabel(c.weathercode);
-  const temp = Math.round(c.temperature_2m);
-  const wind = Math.round(c.windspeed_10m);
+  const c = weatherData.current || weatherData.current_weather || {};
+  const code    = c.weathercode ?? c.weather_code ?? 0;
+  const tempRaw = c.temperature_2m ?? c.temperature ?? 0;
+  const windRaw = c.windspeed_10m ?? c.windspeed ?? 0;
+  const [icon, desc] = wmoLabel(code);
+  const temp = Math.round(tempRaw);
+  const wind = Math.round(windRaw);
 
   document.getElementById('weatherModalIcon').textContent = icon;
   document.getElementById('weatherModalTemp').textContent = temp + '°F';
   document.getElementById('weatherModalDesc').textContent = desc;
   document.getElementById('weatherModalWind').textContent = `Wind ${wind} mph`;
   document.getElementById('weatherModalSub').textContent =
-    weatherData.timezone ? weatherData.timezone.replace('_', ' ') : '';
+    weatherData.timezone ? weatherData.timezone.replace(/_/g, ' ') : '';
 
   // Hourly — next 12 hours from now
-  const now = new Date();
-  const nowHour = now.getHours();
-  const times   = weatherData.hourly.time;
-  const temps   = weatherData.hourly.temperature_2m;
-  const codes   = weatherData.hourly.weathercode;
+  const now    = new Date();
+  const times  = (weatherData.hourly || {}).time || [];
+  const temps  = (weatherData.hourly || {}).temperature_2m || [];
+  const codes  = (weatherData.hourly || {}).weathercode || (weatherData.hourly || {}).weather_code || [];
 
   const hourly = document.getElementById('weatherHourly');
   hourly.innerHTML = '';
   let count = 0;
   for (let i = 0; i < times.length && count < 12; i++) {
-    const h = new Date(times[i]).getHours();
     const t = new Date(times[i]);
-    if (t < now) continue;
+    if (t <= now) continue;
     count++;
-    const [hIcon] = wmoLabel(codes[i]);
-    const hTemp = Math.round(temps[i]);
-    const label = t.toLocaleTimeString([], {hour:'numeric', hour12:true});
-    const col = document.createElement('div');
+    const [hIcon] = wmoLabel(codes[i] ?? 0);
+    const hTemp   = Math.round(temps[i] ?? 0);
+    const label   = t.toLocaleTimeString([], {hour:'numeric', hour12:true});
+    const col     = document.createElement('div');
     col.style.cssText = `
       flex-shrink:0; display:flex; flex-direction:column; align-items:center; gap:4px;
       background:rgba(255,255,255,0.05); border-radius:12px; padding:10px 12px;
@@ -2145,10 +2148,13 @@ function openWeatherModal() {
 
   const modal = document.getElementById('weatherModal');
   modal.style.display = 'flex';
+  modal.style.pointerEvents = 'auto';
 }
 
 function closeWeatherModal() {
-  document.getElementById('weatherModal').style.display = 'none';
+  const modal = document.getElementById('weatherModal');
+  modal.style.display = 'none';
+  modal.style.pointerEvents = 'none';
 }
 
 // ── WAKE LOCK ──────────────────────────────────────────
