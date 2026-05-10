@@ -597,7 +597,7 @@
         <!-- Two-row scorecard: holes 1-9 top, 10-18 bottom -->
         <div id="golfScorecardStrip" style="
           display:flex; flex-direction:column; gap:4px;
-          padding:8px 0; flex-shrink:0; width:100%; max-width:360px;">
+          padding:8px 0; flex-shrink:0; width:100%; max-width:360px; align-self:stretch;">
         </div>
       </div>
 
@@ -606,20 +606,20 @@
         display:none; position:absolute; inset:0; z-index:50;
         background:rgba(10,10,12,0.92); backdrop-filter:blur(6px);
         flex-direction:column; align-items:center; justify-content:center;
-        padding:24px 16px; overflow-y:auto; pointer-events:none;">
+        padding:24px 16px; overflow-y:auto;">
         <div onclick="event.stopPropagation()" style="
           width:100%; max-width:340px; background:#1a1a1e;
           border-radius:20px; border:1px solid rgba(255,255,255,0.1);
-          padding:20px; position:relative;">
+          padding:20px; position:relative; pointer-events:auto;">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
             <div id="golfDetailTitle" style="font-family:var(--display); font-size:20px; font-weight:800; color:var(--text);"></div>
             <button onclick="event.stopPropagation(); closeHoleDetail();" style="
               background:rgba(255,255,255,0.08); border:none; color:#bbb;
               font-size:16px; width:30px; height:30px; border-radius:50%;
-              cursor:pointer; -webkit-tap-highlight-color:transparent;">✕</button>
+              cursor:pointer; -webkit-tap-highlight-color:transparent; pointer-events:auto;">✕</button>
           </div>
           <div id="golfDetailItems" style="display:flex; flex-direction:column; gap:8px;"></div>
-          <div onclick="closeHoleDetail()" style="margin-top:16px; font-family:var(--mono); font-size:10px; color:var(--dim); text-align:center; letter-spacing:1px; cursor:pointer;">TAP ANYWHERE TO CLOSE</div>
+          <div onclick="closeHoleDetail()" style="margin-top:16px; font-family:var(--mono); font-size:10px; color:var(--dim); text-align:center; letter-spacing:1px; cursor:pointer; pointer-events:auto;">TAP ANYWHERE TO CLOSE</div>
         </div>
       </div>
     </div>
@@ -789,7 +789,7 @@
 
       <div style="text-align:center; padding: 16px 0 8px; font-family:'DM Mono',monospace; font-size:9px; color:#666; letter-spacing:2px;">
         DIST TRKR · GPS · DISTANCE · TRACKER<br>
-        <span style="color:#777; font-size:11px; letter-spacing:1px;">v2.0.12</span>
+        <span style="color:#777; font-size:11px; letter-spacing:1px;">v2.0.13</span>
       </div>
 
     </div>

@@ -1788,9 +1788,9 @@ function renderScorecardStrip() {
       const diff = (isScored && par) ? score - par : null;
 
       const cell = document.createElement('div');
-      cell.style.cssText = `flex:1; min-width:0; height:48px;
+      cell.style.cssText = `flex:1 1 0; width:0; height:48px;
         display:flex; flex-direction:column; align-items:center; justify-content:center;
-        cursor:pointer; border-radius:8px;
+        cursor:pointer; border-radius:8px; overflow:hidden;
         background:${isCurrent ? 'rgba(255,255,255,0.08)' : 'transparent'};
         border:${isCurrent ? '1px solid rgba(255,255,255,0.15)' : '1px solid transparent'};
         opacity:${isUnplayed ? '0.3' : '1'};`;
@@ -2425,12 +2425,10 @@ function openHoleDetail() {
 
   const overlay = document.getElementById('golfHoleDetail');
   overlay.style.display = 'flex';
-  overlay.style.pointerEvents = 'auto';
 }
 function closeHoleDetail() {
   const overlay = document.getElementById('golfHoleDetail');
   overlay.style.display = 'none';
-  overlay.style.pointerEvents = 'none';
 }
 
 // Also close on back button / swipe-back
