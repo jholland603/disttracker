@@ -99,6 +99,7 @@ function haversine(la1, lo1, la2, lo2) {
   const a = Math.sin(dLa/2)**2 + Math.cos(r(la1))*Math.cos(r(la2))*Math.sin(dLo/2)**2;
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
 }
+const haversineM = haversine; // alias — returns metres
 
 // ── UNIT TOGGLE ────────────────────────────────────────────
 function setUnit(u) {
@@ -1554,8 +1555,13 @@ ${areaSetup}
   way[golf=tee](area.course);
   node[golf=tee](area.course);
   way[golf=hole](area.course);
+  way[golf=bunker](area.course);
+  way[golf=water_hazard](area.course);
+  way[golf=lateral_water_hazard](area.course);
+  way[natural=water](area.course);
+  way[golf=fairway](area.course);
 );
-out center tags;`;
+out geom tags;`;
 
   fetch('https://overpass-api.de/api/interpreter', {
     method: 'POST',
@@ -1563,23 +1569,45 @@ out center tags;`;
   })
   .then(r => r.json())
   .then(data => {
-    const greens = (data.elements || []).filter(e => e.tags && e.tags.golf === 'green' && e.center);
-    const courseTees  = (data.elements || []).filter(e => e.tags && e.tags.golf === 'tee' && (e.center || (e.lat && e.lon)));
-    const courseHoles = (data.elements || []).filter(e => e.tags && e.tags.golf === 'hole' && e.tags.ref);
+    const els = data.elements || [];
+
+    const centerOf = el => {
+      if (el.center) return el.center;
+      if (el.geometry && el.geometry.length) {
+        const lats = el.geometry.map(p => p.lat);
+        const lons = el.geometry.map(p => p.lon);
+        return { lat: (Math.min(...lats)+Math.max(...lats))/2, lon: (Math.min(...lons)+Math.max(...lons))/2 };
+      }
+      if (el.lat) return { lat: el.lat, lon: el.lon };
+      return null;
+    };
+
+    const greens      = els.filter(e => e.tags && e.tags.golf === 'green'                  && centerOf(e));
+    const courseTees  = els.filter(e => e.tags && e.tags.golf === 'tee'                    && centerOf(e));
+    const courseHoles = els.filter(e => e.tags && e.tags.golf === 'hole'                   && e.tags.ref);
+    const hazards     = els.filter(e => e.tags && (
+      e.tags.golf === 'bunker' ||
+      e.tags.golf === 'water_hazard' ||
+      e.tags.golf === 'lateral_water_hazard' ||
+      e.tags.golf === 'fairway' ||
+      (e.tags.natural === 'water' && e.tags.golf !== 'green')
+    ) && e.geometry && e.geometry.length > 0);
 
     if (greens.length === 0) {
-      buildCourseHoles(name, allGreens, tees, holes, courseEl);
+      buildCourseHoles(name, allGreens, tees, holes, courseEl, []);
       return;
     }
 
-    buildCourseHoles(name, greens, courseTees, courseHoles, courseEl);
+    buildCourseHoles(name, greens, courseTees, courseHoles, courseEl, hazards);
   })
   .catch(() => {
-    buildCourseHoles(name, allGreens, tees, holes, courseEl);
+    buildCourseHoles(name, allGreens, tees, holes, courseEl, []);
   });
 }
 
-function buildCourseHoles(name, greens, tees, holes, courseEl) {
+function buildCourseHoles(name, greens, tees, holes, courseEl, hazards) {
+  hazards = hazards || [];
+
   // Sort greens by hole ref number
   const sorted = [...greens].sort((a, b) => {
     const ra = parseInt(a.tags && a.tags.ref) || 999;
@@ -1594,11 +1622,19 @@ function buildCourseHoles(name, greens, tees, holes, courseEl) {
     if (r) holeMeta[r] = { par: h.tags.par || null, handicap: h.tags.handicap || null };
   });
 
+  // Helper: centroid of a geometry array
+  const centroid = geom => {
+    const lats = geom.map(p => p.lat);
+    const lons = geom.map(p => p.lon);
+    return { lat: (Math.min(...lats)+Math.max(...lats))/2, lon: (Math.min(...lons)+Math.max(...lons))/2 };
+  };
+
   // Build hole objects from greens, matching tees by ref or name (e.g. T10 -> hole 10)
   golfHoles = sorted.map((g, i) => {
     const ref = (g.tags && g.tags.ref) ? parseInt(g.tags.ref) : i + 1;
-    const centerLat = g.center.lat;
-    const centerLon = g.center.lon;
+    const greenCenter = g.center || (g.geometry ? centroid(g.geometry) : null);
+    const centerLat = greenCenter.lat;
+    const centerLon = greenCenter.lon;
 
     const holeTees = tees.filter(t => {
       if (!t.tags) return false;
@@ -1622,12 +1658,32 @@ function buildCourseHoles(name, greens, tees, holes, courseEl) {
 
     const meta = holeMeta[ref] || {};
 
+    // Assign hazards to this hole — belongs to nearest green within 400m
+    const holeHazards = [];
+    hazards.forEach(h => {
+      if (!h.geometry || h.geometry.length === 0) return;
+      const hc = centroid(h.geometry);
+      const distToGreen = haversineM(centerLat, centerLon, hc.lat, hc.lon);
+      let closestDist = distToGreen;
+      sorted.forEach(og => {
+        const ogc = og.center || centroid(og.geometry);
+        const d = haversineM(ogc.lat, ogc.lon, hc.lat, hc.lon);
+        if (d < closestDist) closestDist = d;
+      });
+      if (closestDist === distToGreen && distToGreen < 400) {
+        const type = h.tags.golf || (h.tags.natural === 'water' ? 'water_hazard' : 'unknown');
+        holeHazards.push({ type, geometry: h.geometry, name: h.tags.name || null });
+      }
+    });
+
     return {
       num: ref,
       par: meta.par || (g.tags && g.tags['golf:par']) || null,
       handicap: meta.handicap || null,
       center: {lat: centerLat, lon: centerLon},
-      tees: uniqueTees
+      greenGeometry: g.geometry || null,
+      tees: uniqueTees,
+      hazards: holeHazards
     };
   });
 
@@ -1719,7 +1775,7 @@ function renderScorecardStrip() {
     // Outer cell
     const cell = document.createElement('div');
     cell.style.cssText = `
-      flex-shrink:0; width:32px; height:40px;
+      flex-shrink:0; width:36px; height:48px;
       display:flex; flex-direction:column; align-items:center; justify-content:center;
       cursor:pointer; border-radius:8px;
       background:${isCurrent ? 'rgba(255,255,255,0.08)' : 'transparent'};
@@ -1863,70 +1919,6 @@ function updateGolfDistances() {
 
   document.getElementById('golfDistCenter').textContent = toGolfUnit(dCenter);
   document.getElementById('golfUnitCenter').textContent = golfUnitLabel();
-
-  // Tee distances
-  const teeContainer = document.getElementById('golfTeeDistances');
-  const teeItems = document.getElementById('golfTeeItems');
-  if (hole.tees && hole.tees.length > 0) {
-    teeContainer.style.display = 'block';
-
-    // Calculate distance from current position to each tee, then sort longest to shortest
-    const teesWithDist = hole.tees.map(t => ({
-      ...t,
-      d: golfHaversine(lat, lon, t.lat, t.lon),
-      distToGreen: golfHaversine(t.lat, t.lon, hole.center.lat, hole.center.lon)
-    }));
-    teesWithDist.sort((a, b) => b.distToGreen - a.distToGreen);
-
-    const TEE_COLORS = {
-      black:  { bg: 'rgba(255,255,255,0.06)', border: 'rgba(255,255,255,0.25)', text: '#e0e0e0' },
-      blue:   { bg: 'rgba(30,100,255,0.15)',  border: 'rgba(30,100,255,0.5)',   text: '#6aa3ff' },
-      white:  { bg: 'rgba(255,255,255,0.08)', border: 'rgba(255,255,255,0.4)',  text: '#ffffff' },
-      red:    { bg: 'rgba(255,60,60,0.12)',   border: 'rgba(255,60,60,0.4)',    text: '#ff6b6b' },
-      yellow: { bg: 'rgba(255,210,0,0.12)',   border: 'rgba(255,210,0,0.4)',    text: '#ffd600' },
-      green:  { bg: 'rgba(57,255,20,0.1)',    border: 'rgba(57,255,20,0.4)',    text: '#39ff14' },
-      gold:   { bg: 'rgba(255,180,0,0.12)',   border: 'rgba(255,180,0,0.4)',    text: '#ffb800' },
-    };
-
-    teeItems.innerHTML = teesWithDist.map((t, idx) => {
-      const isBack    = idx === 0;
-      const isForward = idx === teesWithDist.length - 1 && teesWithDist.length > 1;
-      const holeYds   = toGolfUnit(t.distToGreen);
-      const colorKey  = t.label ? t.label.toLowerCase() : null;
-      const hasColor  = colorKey && TEE_COLORS[colorKey];
-
-      // Label: color name if available, else Back/Forward/yds
-      let label;
-      if (hasColor) {
-        const colorName = t.label.charAt(0).toUpperCase() + t.label.slice(1);
-        label = `${colorName} — ${holeYds} ${golfUnitLabel()}`;
-      } else if (isBack) {
-        label = `Back — ${holeYds} ${golfUnitLabel()}`;
-      } else if (isForward) {
-        label = `Forward — ${holeYds} ${golfUnitLabel()}`;
-      } else {
-        label = `${holeYds} ${golfUnitLabel()} to hole`;
-      }
-
-      const c = hasColor ? TEE_COLORS[colorKey] : {
-        bg: 'var(--panel)',
-        border: isBack ? 'rgba(255,255,255,0.2)' : isForward ? 'rgba(0,229,255,0.25)' : 'var(--border)',
-        text: isBack ? 'var(--text)' : isForward ? 'var(--accent)' : 'var(--dim)'
-      };
-
-      return `<div style="display:flex; justify-content:space-between; align-items:center;
-                padding:8px 12px; background:${c.bg}; border:1px solid ${c.border};
-                border-radius:10px;">
-        <span style="font-family:var(--mono); font-size:11px; color:${c.text}; letter-spacing:1px;">${label}</span>
-        <span style="font-family:var(--display); font-size:18px; font-weight:800; color:${c.text};">
-          ${toGolfUnit(t.d)} <span style="font-family:var(--mono); font-size:10px;">${golfUnitLabel()}</span>
-        </span>
-      </div>`;
-    }).join('');
-
-  } else {
-    teeContainer.style.display = 'none';
-  }
 }
 
 
@@ -2156,6 +2148,186 @@ function closeWeatherModal() {
   modal.style.display = 'none';
   modal.style.pointerEvents = 'none';
 }
+
+// ── HOLE DETAIL CARD ───────────────────────────────────────
+
+const HAZARD_LABELS = {
+  bunker:               { icon: '🟡', label: 'Bunker' },
+  water_hazard:         { icon: '💧', label: 'Water' },
+  lateral_water_hazard: { icon: '💧', label: 'Lateral Water' },
+  fairway:              { icon: '🟢', label: 'Fairway' },
+  unknown:              { icon: '⚠️', label: 'Hazard' },
+};
+
+function distToPolygon(playerLat, playerLon, geometry) {
+  // Returns { nearest, furthest } in metres to polygon vertices
+  let nearest = Infinity, furthest = 0;
+  geometry.forEach(pt => {
+    const d = haversineM(playerLat, playerLon, pt.lat, pt.lon);
+    if (d < nearest)  nearest  = d;
+    if (d > furthest) furthest = d;
+  });
+  return { nearest, furthest };
+}
+
+function metresToDisplay(m) {
+  if (golfUnit === 'm') return Math.round(m) + ' m';
+  return Math.round(m * 1.09361) + ' yd';
+}
+
+function openHoleDetail() {
+  const hole = golfHoles[golfCurrentHole];
+  if (!hole) return;
+  const pos = golfCurrentPos;
+
+  const title = document.getElementById('golfDetailTitle');
+  const items = document.getElementById('golfDetailItems');
+  title.textContent = `Hole ${hole.num}${hole.par ? ' · Par ' + hole.par : ''}`;
+  items.innerHTML = '';
+
+  const unit = golfUnit === 'm' ? 'M' : 'YD';
+  const mToDisp = m => Math.round(golfUnit === 'm' ? m : m * 1.09361) + ' ' + unit;
+
+  const prefix = txt =>
+    `<span style="font-family:var(--mono);font-size:10px;font-weight:500;color:var(--dim);letter-spacing:1px;margin-right:4px;">${txt}</span>`;
+
+  const addGreenRow = (label, value) => {
+    const row = document.createElement('div');
+    row.style.cssText = `display:flex; align-items:center; justify-content:space-between;
+      background:rgba(255,255,255,0.04); border-radius:12px; padding:10px 14px;`;
+    row.innerHTML = `
+      <div style="display:flex; align-items:center; gap:8px;">
+        <span style="font-size:16px;">⛳</span>
+        <span style="font-family:var(--sans); font-size:13px; color:var(--mid);">${label}</span>
+      </div>
+      <div style="font-family:var(--display); font-size:16px; font-weight:800; color:var(--accent);">${value}</div>`;
+    items.appendChild(row);
+  };
+
+  const addHazardRow = (icon, label, nearStr, farStr) => {
+    const row = document.createElement('div');
+    row.style.cssText = `display:flex; align-items:center; justify-content:space-between;
+      background:rgba(255,255,255,0.04); border-radius:12px; padding:10px 14px;`;
+    row.innerHTML = `
+      <div style="display:flex; align-items:center; gap:8px;">
+        <span style="font-size:16px;">${icon}</span>
+        <span style="font-family:var(--sans); font-size:13px; color:var(--mid);">${label}</span>
+      </div>
+      <div style="text-align:right;">
+        <div style="font-family:var(--display); font-size:16px; font-weight:800; color:var(--text);">
+          ${prefix('TO —')}${nearStr}
+        </div>
+        <div style="font-family:var(--display); font-size:16px; font-weight:800; color:var(--text); margin-top:4px;">
+          ${prefix('CARRY —')}${farStr}
+        </div>
+      </div>`;
+    items.appendChild(row);
+  };
+
+  const addSectionLabel = txt => {
+    const lbl = document.createElement('div');
+    lbl.style.cssText = `font-family:var(--mono); font-size:9px; color:var(--dim);
+      letter-spacing:2px; text-transform:uppercase; margin: 10px 0 2px 2px;`;
+    lbl.textContent = txt;
+    items.appendChild(lbl);
+  };
+
+  // Green distances: front / center / back
+  if (pos && hole.greenGeometry && hole.greenGeometry.length > 0) {
+    const { nearest: front, furthest: back } = distToPolygon(pos.lat, pos.lon, hole.greenGeometry);
+    const center = haversineM(pos.lat, pos.lon, hole.center.lat, hole.center.lon);
+    addGreenRow('Front of green',  mToDisp(front));
+    addGreenRow('Center of green', mToDisp(center));
+    addGreenRow('Back of green',   mToDisp(back));
+  } else if (pos) {
+    const center = haversineM(pos.lat, pos.lon, hole.center.lat, hole.center.lon);
+    addGreenRow('Center of green', mToDisp(center));
+  } else {
+    addGreenRow('Center of green', 'GPS needed');
+  }
+
+  // Tee distances
+  const tees = hole.tees || [];
+  if (tees.length > 0) {
+    addSectionLabel('Tee distances');
+
+    const TEE_COLORS = {
+      black:  '#e0e0e0', blue: '#6aa3ff', white: '#ffffff',
+      red:    '#ff6b6b', yellow: '#ffd600', green: '#39ff14', gold: '#ffb800',
+    };
+
+    const teesWithDist = tees.map(t => ({
+      ...t,
+      distToGreen: haversineM(t.lat, t.lon, hole.center.lat, hole.center.lon)
+    })).sort((a, b) => b.distToGreen - a.distToGreen);
+
+    teesWithDist.forEach((t, idx) => {
+      const isBack    = idx === 0;
+      const isForward = idx === teesWithDist.length - 1 && teesWithDist.length > 1;
+      const colorKey  = t.label ? t.label.toLowerCase() : null;
+      const color     = TEE_COLORS[colorKey] || (isBack ? 'var(--text)' : isForward ? 'var(--accent)' : 'var(--dim)');
+      const colorName = t.label ? t.label.charAt(0).toUpperCase() + t.label.slice(1)
+                      : isBack ? 'Back' : isForward ? 'Forward' : 'Tee';
+
+      const row = document.createElement('div');
+      row.style.cssText = `display:flex; align-items:center; justify-content:space-between;
+        background:rgba(255,255,255,0.04); border-radius:12px; padding:10px 14px;`;
+      row.innerHTML = `
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span style="font-size:16px;">🏌️</span>
+          <span style="font-family:var(--sans); font-size:13px; color:var(--mid);">${colorName} tee</span>
+        </div>
+        <div style="font-family:var(--display); font-size:16px; font-weight:800; color:${color};">
+          ${mToDisp(t.distToGreen)} <span style="font-family:var(--mono); font-size:10px; color:var(--dim);">${unit}</span>
+        </div>`;
+      items.appendChild(row);
+    });
+  }
+
+  // Hazards
+  const hazards = hole.hazards || [];
+  if (hazards.length === 0) {
+    const none = document.createElement('div');
+    none.style.cssText = `font-family:var(--mono); font-size:11px; color:var(--dim);
+      text-align:center; padding:14px 0; letter-spacing:1px;`;
+    none.textContent = 'NO HAZARD DATA FOR THIS HOLE';
+    items.appendChild(none);
+  } else {
+    const refLat = pos ? pos.lat : (hole.tees[0] ? hole.tees[0].lat : hole.center.lat);
+    const refLon = pos ? pos.lon : (hole.tees[0] ? hole.tees[0].lon : hole.center.lon);
+
+    const withDist = hazards.map(h => {
+      const { nearest, furthest } = distToPolygon(refLat, refLon, h.geometry);
+      return { ...h, nearest, furthest };
+    }).filter(h => {
+      const greenDist = haversineM(refLat, refLon, hole.center.lat, hole.center.lon);
+      return h.nearest < greenDist + 50;
+    }).sort((a, b) => a.nearest - b.nearest);
+
+    if (withDist.length > 0) addSectionLabel('Hazards ahead');
+
+    withDist.forEach(h => {
+      const { icon, label } = HAZARD_LABELS[h.type] || HAZARD_LABELS.unknown;
+      const name = h.name ? ` · ${h.name}` : '';
+      addHazardRow(icon, label + name, mToDisp(h.nearest), mToDisp(h.furthest));
+    });
+  }
+
+  const overlay = document.getElementById('golfHoleDetail');
+  overlay.style.display = 'flex';
+}
+function closeHoleDetail() {
+  document.getElementById('golfHoleDetail').style.display = 'none';
+}
+
+// Also close on back button / swipe-back
+window.addEventListener('popstate', () => {
+  const d = document.getElementById('golfHoleDetail');
+  if (d && d.style.display !== 'none') {
+    closeHoleDetail();
+    history.pushState(null, '');
+  }
+});
 
 // ── WAKE LOCK ──────────────────────────────────────────
 
