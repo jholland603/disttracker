@@ -1775,7 +1775,7 @@ function renderScorecardStrip() {
 
   const buildRow = (rowHoles, startIdx) => {
     const row = document.createElement('div');
-    row.style.cssText = 'display:flex; justify-content:space-between; gap:2px;';
+    row.style.cssText = 'display:flex; justify-content:space-between; gap:2px; width:100%;';
 
     rowHoles.forEach((hole, ri) => {
       const i          = startIdx + ri;
