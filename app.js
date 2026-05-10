@@ -1228,6 +1228,7 @@ let golfCurrentPos  = null;
 let golfHoles       = [];     // array of hole objects for selected course
 let golfCurrentHole = 0;      // index into golfHoles
 let golfStartHole   = 0;      // index of the hole the round started on
+let golfHasLooped   = false;  // true once player wraps 18→1
 let golfCourseName  = '';
 let golfScores      = [];     // stroke counts per hole, index matches golfHoles
 
@@ -1289,20 +1290,19 @@ function renderScore() {
     }
   }
 
-  // Running total — iterate all holes, only count those with a score entered
+  // Running total — only count holes in play order
+  // Before looping: skip holes with index < golfStartHole (not yet reached)
   let totalStrokes = 0;
   let totalPar     = 0;
   let holesPlayed  = 0;
   let parKnown     = true;
   golfHoles.forEach((h, i) => {
     if (golfScores[i] === undefined) return;
+    if (!golfHasLooped && i < golfStartHole) return; // exclude pre-start holes until looped
     totalStrokes += golfScores[i];
     holesPlayed++;
-    if (h.par) {
-      totalPar += parseInt(h.par);
-    } else {
-      parKnown = false;
-    }
+    if (h.par) totalPar += parseInt(h.par);
+    else parKnown = false;
   });
 
   if (holesPlayed === 0) {
@@ -1370,24 +1370,29 @@ function startGolfGpsWatch() {
 function checkTeeProximity(lat, lon) {
   if (!golfHoles.length) return;
 
-  // Only look at the very next hole — never skip more than one
-  let closestHoleIdx = null;
-  let closestDist = Infinity;
+  // Next hole index — wrap from last hole back to first (18→1 turnover)
+  const isLastHole = golfCurrentHole === golfHoles.length - 1;
+  const nextIdx    = isLastHole ? 0 : golfCurrentHole + 1;
 
-  for (let i = golfCurrentHole + 1; i <= golfCurrentHole + 1 && i < golfHoles.length; i++) {
-    const hole = golfHoles[i];
-    if (!hole.tees || !hole.tees.length) continue;
+  // Only advance if next hole is actually ahead in round order OR we're doing the 18→1 wrap
+  // and the player started on a hole other than 1 (i.e. a split-start round)
+  const isWrapAround = isLastHole && golfStartHole > 0 && nextIdx < golfStartHole;
+
+  let closestHoleIdx = null;
+  let closestDist    = Infinity;
+
+  const hole = golfHoles[nextIdx];
+  if (hole && hole.tees && hole.tees.length) {
     for (const tee of hole.tees) {
       const d = golfHaversine(lat, lon, tee.lat, tee.lon);
       if (d < TEE_PROXIMITY_METERS && d < closestDist) {
-        closestDist = d;
-        closestHoleIdx = i;
+        closestDist    = d;
+        closestHoleIdx = nextIdx;
       }
     }
   }
 
   if (closestHoleIdx !== null && closestHoleIdx !== teeProximityHole) {
-    // Entered a new tee box — start timer
     teeProximityHole = closestHoleIdx;
     clearTimeout(teeProximityTimer);
     const holeNum = golfHoles[closestHoleIdx].num;
@@ -1395,11 +1400,11 @@ function checkTeeProximity(lat, lon) {
     teeProximityTimer = setTimeout(() => {
       if (teeProximityHole === closestHoleIdx) {
         const prevHole = golfCurrentHole;
-        // Auto-record par for the hole we're leaving if no score entered
         if (golfScores[prevHole] === undefined && prevHole >= golfStartHole && golfHoles[prevHole] && golfHoles[prevHole].par) {
           golfScores[prevHole] = parseInt(golfHoles[prevHole].par);
         }
         golfCurrentHole = closestHoleIdx;
+        if (closestHoleIdx < golfStartHole) golfHasLooped = true;
         saveGolfState();
         renderHole();
         showAdvanceNotice(`Now on hole ${golfHoles[golfCurrentHole].num}`, 3000);
@@ -1407,10 +1412,9 @@ function checkTeeProximity(lat, lon) {
       }
     }, TEE_ADVANCE_SECS * 1000);
   } else if (closestHoleIdx === null && teeProximityHole !== null) {
-    // Left the tee box before timer fired — cancel
     clearTimeout(teeProximityTimer);
     teeProximityTimer = null;
-    teeProximityHole = null;
+    teeProximityHole  = null;
     hideAdvanceNotice();
   }
 }
@@ -1747,6 +1751,7 @@ function showStartHolePrompt() {
 function confirmStartHole(idx) {
   golfCurrentHole = idx;
   golfStartHole   = idx;
+  golfHasLooped   = false;
   golfScores      = [];
   saveGolfState();
 
@@ -1764,53 +1769,58 @@ function renderScorecardStrip() {
   if (!strip || !golfHoles.length) return;
   strip.innerHTML = '';
 
-  const displayHoles = golfHoles.slice(0, 18);
-  displayHoles.forEach((hole, i) => {
-    const score = golfScores[i];
-    const par   = hole.par ? parseInt(hole.par) : null;
-    const isCurrent = i === golfCurrentHole;
-    const isScored  = score !== undefined;
-    const diff = (isScored && par) ? score - par : null;
+  const holes     = golfHoles.slice(0, 18);
+  const frontNine = holes.slice(0, 9);
+  const backNine  = holes.slice(9, 18);
 
-    // Outer cell
-    const cell = document.createElement('div');
-    cell.style.cssText = `
-      flex-shrink:0; width:36px; height:48px;
-      display:flex; flex-direction:column; align-items:center; justify-content:center;
-      cursor:pointer; border-radius:8px;
-      background:${isCurrent ? 'rgba(255,255,255,0.08)' : 'transparent'};
-      border:${isCurrent ? '1px solid rgba(255,255,255,0.15)' : '1px solid transparent'};
-    `;
-    cell.onclick = () => { golfCurrentHole = i; saveGolfState(); renderHole(); };
+  const buildRow = (rowHoles, startIdx) => {
+    const row = document.createElement('div');
+    row.style.cssText = 'display:flex; justify-content:space-between; gap:2px;';
 
-    // Hole number (tiny, above)
-    const num = document.createElement('div');
-    num.style.cssText = `font-family:var(--mono); font-size:9px; letter-spacing:0px;
-      color:${isScored ? 'var(--dim)' : isCurrent ? 'var(--mid)' : '#444'}; margin-bottom:2px;`;
-    num.textContent = hole.num || (i + 1);
-    cell.appendChild(num);
+    rowHoles.forEach((hole, ri) => {
+      const i          = startIdx + ri;
+      const score      = golfScores[i];
+      const par        = hole.par ? parseInt(hole.par) : null;
+      const isCurrent  = i === golfCurrentHole;
+      const isScored   = score !== undefined;
+      const beforeStart = i < golfStartHole;
+      const isUnplayed  = !isScored && beforeStart;
+      const diff = (isScored && par) ? score - par : null;
 
-    // Score marking (SVG with circle/square)
-    if (isScored) {
-      const svg = buildScoreMarkingSVG(score, diff);
-      cell.appendChild(svg);
-    } else {
-      // Unplayed — grey dash
-      const dash = document.createElement('div');
-      dash.style.cssText = `font-family:var(--mono); font-size:13px; color:#333; line-height:1;`;
-      dash.textContent = '·';
-      cell.appendChild(dash);
-    }
+      const cell = document.createElement('div');
+      cell.style.cssText = `flex:1; min-width:0; height:48px;
+        display:flex; flex-direction:column; align-items:center; justify-content:center;
+        cursor:pointer; border-radius:8px;
+        background:${isCurrent ? 'rgba(255,255,255,0.08)' : 'transparent'};
+        border:${isCurrent ? '1px solid rgba(255,255,255,0.15)' : '1px solid transparent'};
+        opacity:${isUnplayed ? '0.3' : '1'};`;
+      cell.onclick = () => { golfCurrentHole = i; saveGolfState(); renderHole(); };
 
-    strip.appendChild(cell);
-  });
+      const num = document.createElement('div');
+      num.style.cssText = `font-family:var(--mono); font-size:9px;
+        color:${isScored ? 'var(--dim)' : isCurrent ? 'var(--mid)' : '#444'};
+        margin-bottom:2px;`;
+      num.textContent = hole.num || (i + 1);
+      cell.appendChild(num);
 
-  // Scroll current hole into view
-  const cells = strip.children;
-  if (cells[golfCurrentHole]) {
-    cells[golfCurrentHole].scrollIntoView({ block: 'nearest', inline: 'center', behavior: 'smooth' });
-  }
+      if (isScored) {
+        cell.appendChild(buildScoreMarkingSVG(score, diff));
+      } else {
+        const dash = document.createElement('div');
+        dash.style.cssText = 'font-family:var(--mono); font-size:13px; color:#333; line-height:1;';
+        dash.textContent = '·';
+        cell.appendChild(dash);
+      }
+
+      row.appendChild(cell);
+    });
+    return row;
+  };
+
+  if (frontNine.length > 0) strip.appendChild(buildRow(frontNine, 0));
+  if (backNine.length  > 0) strip.appendChild(buildRow(backNine,  9));
 }
+
 
 function buildScoreMarkingSVG(score, diff) {
   const size = 24;
@@ -1943,31 +1953,128 @@ function changeHole(dir) {
 }
 
 function confirmFinishRound() {
-  let holesPlayed = golfScores.filter(s => s !== undefined).length;
-  let totalStrokes = 0;
-  let totalPar = 0;
+  let holesPlayed = 0, totalStrokes = 0, totalPar = 0;
   let parKnown = true;
   golfHoles.forEach((h, i) => {
     if (golfScores[i] === undefined) return;
+    if (!golfHasLooped && i < golfStartHole) return;
+    holesPlayed++;
+    totalStrokes += golfScores[i];
+    if (h.par) totalPar += parseInt(h.par);
+    else parKnown = false;
+  });
+  const diff    = parKnown && totalPar > 0 ? totalStrokes - totalPar : null;
+  const diffStr = diff === null ? '' : diff === 0 ? ' · EVEN' : diff > 0 ? ' · +' + diff : ' · ' + diff;
+
+  if (holesPlayed === 0) {
+    if (confirm('Finish round and return to course list?')) resetGolfSearch();
+    return;
+  }
+
+  if (!confirm(`Finish round?\n${holesPlayed} holes · ${totalStrokes} strokes${diffStr}`)) return;
+
+  // Check for assumed (auto-par) holes on common round lengths
+  const assumedHoles = golfHoles.reduce((acc, h, i) => {
+    if (golfScores[i] !== undefined && h.par && golfScores[i] === parseInt(h.par)) {
+      // We can't know for certain if this was assumed or genuinely scored par,
+      // but we flag it when round is 8 or 17 holes — one hole short of 9 or 18
+      acc.push(i);
+    }
+    return acc;
+  }, []);
+
+  const shouldReview = (holesPlayed === 8 || holesPlayed === 17) && assumedHoles.length > 0;
+
+  if (shouldReview) {
+    openParReviewModal(holesPlayed, totalStrokes, totalPar, parKnown, diff);
+  } else {
+    if (confirm('Save this round to your Log?')) {
+      saveGolfRoundToLog(holesPlayed, totalStrokes, totalPar, parKnown, diff);
+    }
+    resetGolfSearch();
+  }
+}
+
+// Stores pending save data while modal is open
+let _pendingRoundData = null;
+
+function openParReviewModal(holesPlayed, totalStrokes, totalPar, parKnown, diff) {
+  _pendingRoundData = { holesPlayed, totalStrokes, totalPar, parKnown, diff };
+
+  const container = document.getElementById('golfParReviewItems');
+  container.innerHTML = '';
+
+  // Show all par-scored holes as potentially assumed
+  golfHoles.forEach((h, i) => {
+    if (golfScores[i] === undefined) return;
+    if (!h.par || golfScores[i] !== parseInt(h.par)) return;
+
+    const par = parseInt(h.par);
+    const row = document.createElement('div');
+    row.style.cssText = `display:flex; align-items:center; justify-content:space-between;
+      background:rgba(255,255,255,0.04); border-radius:12px; padding:10px 14px;`;
+    row.innerHTML = `
+      <div>
+        <div style="font-family:var(--sans); font-size:14px; font-weight:700; color:var(--text);">Hole ${h.num || (i+1)}</div>
+        <div style="font-family:var(--mono); font-size:10px; color:var(--dim); margin-top:2px;">Par ${par} · assumed at par</div>
+      </div>
+      <div style="display:flex; align-items:center; gap:10px;">
+        <button onclick="adjustParReview(${i}, -1)" style="
+          width:32px; height:32px; border-radius:50%;
+          background:rgba(255,61,113,0.12); border:1px solid rgba(255,61,113,0.3);
+          color:var(--red); font-size:18px; font-weight:800; cursor:pointer;
+          -webkit-tap-highlight-color:transparent; line-height:1;">−</button>
+        <div id="parReviewScore_${i}" style="
+          font-family:var(--display); font-size:24px; font-weight:800;
+          color:var(--text); min-width:28px; text-align:center;">${par}</div>
+        <button onclick="adjustParReview(${i}, 1)" style="
+          width:32px; height:32px; border-radius:50%;
+          background:rgba(0,229,255,0.1); border:1px solid rgba(0,229,255,0.25);
+          color:var(--accent); font-size:18px; font-weight:800; cursor:pointer;
+          -webkit-tap-highlight-color:transparent; line-height:1;">+</button>
+      </div>`;
+    container.appendChild(row);
+  });
+
+  const modal = document.getElementById('golfParReviewModal');
+  modal.style.display = 'flex';
+  modal.style.pointerEvents = 'auto';
+}
+
+function adjustParReview(holeIdx, delta) {
+  const current = golfScores[holeIdx];
+  const newVal  = Math.max(1, current + delta);
+  golfScores[holeIdx] = newVal;
+
+  // Update display
+  const el = document.getElementById(`parReviewScore_${holeIdx}`);
+  if (el) el.textContent = newVal;
+}
+
+function closeParReviewModal() {
+  const modal = document.getElementById('golfParReviewModal');
+  modal.style.display = 'none';
+  modal.style.pointerEvents = 'none';
+  _pendingRoundData = null;
+}
+
+function confirmParReviewAndSave() {
+  closeParReviewModal();
+
+  // Recalculate totals after any adjustments
+  let holesPlayed = 0, totalStrokes = 0, totalPar = 0;
+  let parKnown = true;
+  golfHoles.forEach((h, i) => {
+    if (golfScores[i] === undefined) return;
+    holesPlayed++;
     totalStrokes += golfScores[i];
     if (h.par) totalPar += parseInt(h.par);
     else parKnown = false;
   });
   const diff = parKnown && totalPar > 0 ? totalStrokes - totalPar : null;
-  const diffStr = diff === null ? '' : diff === 0 ? ' · EVEN' : diff > 0 ? ' · +' + diff : ' · ' + diff;
 
-  const msg = holesPlayed > 0
-    ? `Finish round?\n${holesPlayed} holes · ${totalStrokes} strokes${diffStr}\n\nSave this round to your Log?`
-    : 'Finish round and return to course list?';
-
-  if (holesPlayed > 0) {
-    // Use a two-step confirm: finish + offer save
-    if (!confirm(`Finish round?\n${holesPlayed} holes · ${totalStrokes} strokes${diffStr}`)) return;
-    if (confirm('Save this round to your Log?')) {
-      saveGolfRoundToLog(holesPlayed, totalStrokes, totalPar, parKnown, diff);
-    }
-  } else {
-    if (!confirm(msg)) return;
+  if (confirm('Save this round to your Log?')) {
+    saveGolfRoundToLog(holesPlayed, totalStrokes, totalPar, parKnown, diff);
   }
   resetGolfSearch();
 }
@@ -2014,6 +2121,7 @@ function resetGolfSearch() {
   golfHoles = [];
   golfCurrentHole = 0;
   golfStartHole   = 0;
+  golfHasLooped   = false;
   golfScores = [];
   golfCourseName = '';
   clearGolfState();
@@ -2021,6 +2129,8 @@ function resetGolfSearch() {
   document.getElementById('golfCourseList').style.display = 'none';
   document.getElementById('golfHoleView').style.display = 'none';
   document.getElementById('golfStartPrompt').style.display = 'none';
+  document.getElementById('golfParReviewModal').style.display = 'none';
+  document.getElementById('golfParReviewModal').style.pointerEvents = 'none';
   document.getElementById('golfSearchStatus').textContent = '';
 }
 
@@ -2315,9 +2425,12 @@ function openHoleDetail() {
 
   const overlay = document.getElementById('golfHoleDetail');
   overlay.style.display = 'flex';
+  overlay.style.pointerEvents = 'auto';
 }
 function closeHoleDetail() {
-  document.getElementById('golfHoleDetail').style.display = 'none';
+  const overlay = document.getElementById('golfHoleDetail');
+  overlay.style.display = 'none';
+  overlay.style.pointerEvents = 'none';
 }
 
 // Also close on back button / swipe-back
