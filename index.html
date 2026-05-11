@@ -26,7 +26,7 @@
 
 <!-- Google AdSense: ca-pub-7581999835206831 -->
 <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7581999835206831" crossorigin="anonymous"></script>
-<link rel="stylesheet" href="styles.css?v=2.0.29">
+<link rel="stylesheet" href="styles.css?v=2.0.31">
 </head>
 <body>
 <div class="page-wrap">
@@ -616,14 +616,20 @@
       <!-- Hole detail overlay — tap distance to open, tap anywhere to close -->
       <div id="golfHoleDetail" onclick="closeHoleDetail()" style="
         display:none; position:absolute; inset:0; z-index:50;
-        background:rgba(10,10,12,0.92); backdrop-filter:blur(6px);
-        flex-direction:column; align-items:center; justify-content:flex-start;
-        padding:16px; overflow:hidden;">
+        flex-direction:column; align-items:stretch; justify-content:flex-end;
+        overflow:hidden;">
+        <!-- Background map -->
+        <div id="golfDetailBgMap" style="position:absolute; inset:0; z-index:0;"></div>
+        <!-- Dark tint over map -->
+        <div style="position:absolute; inset:0; z-index:1; background:rgba(0,0,0,0.45); pointer-events:none;"></div>
+        <!-- Detail card slides up from bottom -->
         <div onclick="event.stopPropagation()" style="
-          width:100%; max-width:340px; background:#1a1a1e;
-          border-radius:20px; border:1px solid rgba(255,255,255,0.1);
+          position:relative; z-index:2;
+          width:100%; background:#1a1a1e;
+          border-radius:20px 20px 0 0; border-top:1px solid rgba(255,255,255,0.12);
+          border-left:1px solid rgba(255,255,255,0.08); border-right:1px solid rgba(255,255,255,0.08);
           display:flex; flex-direction:column;
-          max-height:calc(100% - 32px); pointer-events:auto;">
+          max-height:70vh; pointer-events:auto;">
           <!-- Back arrow header -->
           <div style="display:flex; justify-content:space-between; align-items:center;
             padding:12px 16px 12px; flex-shrink:0;
@@ -636,7 +642,7 @@
               ‹ Back
             </button>
             <div id="golfDetailTitle" style="font-family:var(--display); font-size:18px; font-weight:800; color:var(--text);"></div>
-            <div style="width:60px;"></div><!-- spacer to center title -->
+            <div style="width:60px;"></div>
           </div>
           <!-- Scrollable items -->
           <div id="golfDetailItems" style="
@@ -863,7 +869,7 @@
 
       <div style="text-align:center; padding: 16px 0 8px; font-family:'DM Mono',monospace; font-size:9px; color:#666; letter-spacing:2px;">
         DIST TRKR · GPS · DISTANCE · TRACKER<br>
-        <span style="color:#777; font-size:11px; letter-spacing:1px;">v2.0.29</span>
+        <span style="color:#777; font-size:11px; letter-spacing:1px;">v2.0.31</span>
       </div>
 
     </div>
@@ -3339,9 +3345,42 @@ function openHoleDetail() {
 
   const overlay = document.getElementById('golfHoleDetail');
   overlay.style.display = 'flex';
+
+  // Init background map in detail overlay
+  const bgContainer = document.getElementById('golfDetailBgMap');
+  bgContainer.innerHTML = '';
+  const bgMap = L.map(bgContainer, {
+    zoomControl: false, attributionControl: false,
+    dragging: false, touchZoom: false, scrollWheelZoom: false,
+    doubleClickZoom: false, boxZoom: false, keyboard: false, tap: false
+  }).setView([hole.center.lat, hole.center.lon], 17);
+
+  L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+    maxZoom: 20
+  }).addTo(bgMap);
+
+  if (hole.greenGeometry && hole.greenGeometry.length > 0) {
+    const gc = hole.greenGeometry.map(p => [p.lat, p.lon]);
+    L.polygon(gc, { color: '#39ff14', weight: 2, fillColor: '#39ff14', fillOpacity: 0.3, interactive: false }).addTo(bgMap);
+    const bounds = [...gc];
+    (hole.tees || []).forEach(t => { if (t.lat && t.lon) bounds.push([t.lat, t.lon]); });
+    bgMap.fitBounds(bounds, { padding: [20, 20] });
+  }
+
+  // Mark player position
+  const bgPos = golfCurrentPos;
+  if (bgPos) {
+    L.circleMarker([bgPos.lat, bgPos.lon], { radius: 6, color: '#00e5ff', fillColor: '#00e5ff', fillOpacity: 0.9, weight: 2, interactive: false }).addTo(bgMap);
+  }
+
+  overlay._bgMap = bgMap;
+  setTimeout(() => bgMap.invalidateSize(), 100);
 }
+
 function closeHoleDetail() {
   const overlay = document.getElementById('golfHoleDetail');
+  if (overlay._bgMap) { overlay._bgMap.remove(); overlay._bgMap = null; }
+  document.getElementById('golfDetailBgMap').innerHTML = '';
   overlay.style.display = 'none';
 }
 
