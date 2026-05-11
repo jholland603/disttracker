@@ -2318,16 +2318,18 @@ function openHoleDetail() {
   const prefix = txt =>
     `<span style="font-family:var(--mono);font-size:10px;font-weight:500;color:var(--dim);letter-spacing:1px;margin-right:4px;">${txt}</span>`;
 
-  const addGreenRow = (label, value) => {
+  const addGreenRow = (label, value, large) => {
     const row = document.createElement('div');
     row.style.cssText = `display:flex; align-items:center; justify-content:space-between;
-      background:rgba(255,255,255,0.04); border-radius:12px; padding:10px 14px;`;
+      background:${large ? 'rgba(0,229,255,0.08)' : 'rgba(255,255,255,0.04)'};
+      border:${large ? '1px solid rgba(0,229,255,0.2)' : '1px solid transparent'};
+      border-radius:14px; padding:${large ? '14px 16px' : '10px 14px'};`;
     row.innerHTML = `
       <div style="display:flex; align-items:center; gap:8px;">
-        <span style="font-size:16px;">⛳</span>
-        <span style="font-family:var(--sans); font-size:13px; color:var(--mid);">${label}</span>
+        <span style="font-size:${large ? '20px' : '16px'};">⛳</span>
+        <span style="font-family:var(--sans); font-size:${large ? '15px' : '13px'}; color:${large ? 'var(--accent)' : 'var(--mid)'}; font-weight:${large ? '700' : '400'};">${label}</span>
       </div>
-      <div style="font-family:var(--display); font-size:16px; font-weight:800; color:var(--accent);">${value}</div>`;
+      <div style="font-family:var(--display); font-size:${large ? '26px' : '16px'}; font-weight:800; color:var(--accent);">${value}</div>`;
     items.appendChild(row);
   };
 
@@ -2359,68 +2361,23 @@ function openHoleDetail() {
     items.appendChild(lbl);
   };
 
-  // Green distances: front / center / back
+  // Green distances: front / center (large) / back
   if (pos && hole.greenGeometry && hole.greenGeometry.length > 0) {
     const { nearest: front, furthest: back } = distToPolygon(pos.lat, pos.lon, hole.greenGeometry);
     const center = haversineM(pos.lat, pos.lon, hole.center.lat, hole.center.lon);
     addGreenRow('Front of green',  mToDisp(front));
-    addGreenRow('Center of green', mToDisp(center));
+    addGreenRow('Center of green', mToDisp(center), true);
     addGreenRow('Back of green',   mToDisp(back));
   } else if (pos) {
     const center = haversineM(pos.lat, pos.lon, hole.center.lat, hole.center.lon);
-    addGreenRow('Center of green', mToDisp(center));
+    addGreenRow('Center of green', mToDisp(center), true);
   } else {
-    addGreenRow('Center of green', 'GPS needed');
+    addGreenRow('Center of green', 'GPS needed', true);
   }
 
-  // Tee distances
-  const tees = hole.tees || [];
-  if (tees.length > 0) {
-    addSectionLabel('Tee distances');
-
-    const TEE_COLORS = {
-      black:  '#e0e0e0', blue: '#6aa3ff', white: '#ffffff',
-      red:    '#ff6b6b', yellow: '#ffd600', green: '#39ff14', gold: '#ffb800',
-    };
-
-    const teesWithDist = tees
-      .filter(t => t.lat && t.lon)
-      .map(t => ({
-        ...t,
-        distToGreen: haversineM(t.lat, t.lon, hole.center.lat, hole.center.lon)
-      }))
-      .sort((a, b) => a.distToGreen - b.distToGreen);
-
-    teesWithDist.forEach((t, idx) => {
-      const isBack   = idx === teesWithDist.length - 1 && teesWithDist.length > 1;
-      const colorKey = t.label ? t.label.toLowerCase() : null;
-      const color    = TEE_COLORS[colorKey] || (isBack ? 'var(--text)' : 'var(--dim)');
-      const colorName = t.label ? t.label.charAt(0).toUpperCase() + t.label.slice(1)
-                      : isBack ? 'Back' : 'Tee';
-
-      const row = document.createElement('div');
-      row.style.cssText = `display:flex; align-items:center; justify-content:space-between;
-        background:rgba(255,255,255,0.04); border-radius:12px; padding:10px 14px;`;
-      row.innerHTML = `
-        <div style="display:flex; align-items:center; gap:8px;">
-          <span style="font-size:16px;">\u26f3</span>
-          <span style="font-family:var(--sans); font-size:13px; color:var(--mid);">${colorName}</span>
-        </div>
-        <div style="font-family:var(--display); font-size:16px; font-weight:800; color:${color};">
-          ${mToDisp(t.distToGreen)}
-        </div>`;
-      items.appendChild(row);
-    });
-  }
   // Hazards
   const hazards = hole.hazards || [];
-  if (hazards.length === 0) {
-    const none = document.createElement('div');
-    none.style.cssText = `font-family:var(--mono); font-size:11px; color:var(--dim);
-      text-align:center; padding:14px 0; letter-spacing:1px;`;
-    none.textContent = 'NO HAZARD DATA FOR THIS HOLE';
-    items.appendChild(none);
-  } else {
+  if (hazards.length > 0) {
     const refLat = pos ? pos.lat : (hole.tees[0] ? hole.tees[0].lat : hole.center.lat);
     const refLon = pos ? pos.lon : (hole.tees[0] ? hole.tees[0].lon : hole.center.lon);
 
@@ -2440,6 +2397,53 @@ function openHoleDetail() {
       addHazardRow(icon, label + name, mToDisp(h.nearest), mToDisp(h.furthest));
     });
   }
+
+  // Tee boxes — at the bottom, shortest to longest, with distance from player
+  const tees = hole.tees || [];
+  if (tees.length > 0) {
+    addSectionLabel('Tee boxes');
+
+    const TEE_COLORS = {
+      black:  '#e0e0e0', blue: '#6aa3ff', white: '#ffffff',
+      red:    '#ff6b6b', yellow: '#ffd600', green: '#39ff14', gold: '#ffb800',
+    };
+
+    const teesWithDist = tees
+      .filter(t => t.lat && t.lon)
+      .map(t => ({
+        ...t,
+        distToGreen:    haversineM(t.lat, t.lon, hole.center.lat, hole.center.lon),
+        distFromPlayer: pos ? haversineM(pos.lat, pos.lon, t.lat, t.lon) : null
+      }))
+      .sort((a, b) => a.distToGreen - b.distToGreen);
+
+    teesWithDist.forEach((t, idx) => {
+      const isBack    = idx === teesWithDist.length - 1 && teesWithDist.length > 1;
+      const colorKey  = t.label ? t.label.toLowerCase() : null;
+      const color     = TEE_COLORS[colorKey] || (isBack ? 'var(--text)' : 'var(--dim)');
+      const colorName = t.label ? t.label.charAt(0).toUpperCase() + t.label.slice(1)
+                      : isBack ? 'Back' : 'Tee';
+
+      const fromPlayerStr = t.distFromPlayer !== null
+        ? `<div style="font-family:var(--mono); font-size:10px; color:var(--dim); margin-top:2px;">${mToDisp(t.distFromPlayer)} from you</div>`
+        : '';
+
+      const row = document.createElement('div');
+      row.style.cssText = `display:flex; align-items:center; justify-content:space-between;
+        background:rgba(255,255,255,0.04); border-radius:12px; padding:10px 14px;`;
+      row.innerHTML = `
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span style="font-size:16px;">🏌️</span>
+          <span style="font-family:var(--sans); font-size:13px; color:var(--mid);">${colorName}</span>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-family:var(--display); font-size:16px; font-weight:800; color:${color};">${mToDisp(t.distToGreen)}</div>
+          ${fromPlayerStr}
+        </div>`;
+      items.appendChild(row);
+    });
+  }
+
 
   const overlay = document.getElementById('golfHoleDetail');
   overlay.style.display = 'flex';
