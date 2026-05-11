@@ -26,7 +26,7 @@
 
 <!-- Google AdSense: ca-pub-7581999835206831 -->
 <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7581999835206831" crossorigin="anonymous"></script>
-<link rel="stylesheet" href="styles.css?v=2.0.20">
+<link rel="stylesheet" href="styles.css?v=2.0.21">
 </head>
 <body>
 <div class="page-wrap">
@@ -797,7 +797,7 @@
 
       <div style="text-align:center; padding: 16px 0 8px; font-family:'DM Mono',monospace; font-size:9px; color:#666; letter-spacing:2px;">
         DIST TRKR · GPS · DISTANCE · TRACKER<br>
-        <span style="color:#777; font-size:11px; letter-spacing:1px;">v2.0.20</span>
+        <span style="color:#777; font-size:11px; letter-spacing:1px;">v2.0.21</span>
       </div>
 
     </div>
@@ -3193,9 +3193,9 @@ function openHoleDetail() {
   if (pos && hole.greenGeometry && hole.greenGeometry.length > 0) {
     const { nearest: front, furthest: back } = distToPolygon(pos.lat, pos.lon, hole.greenGeometry);
     const center = haversineM(pos.lat, pos.lon, hole.center.lat, hole.center.lon);
-    addGreenRow('Front of green',  mToDisp(front));
-    addGreenRow('Center of green', mToNum(center), true);
     addGreenRow('Back of green',   mToDisp(back));
+    addGreenRow('Center of green', mToNum(center), true);
+    addGreenRow('Front of green',  mToDisp(front));
   } else if (pos) {
     const center = haversineM(pos.lat, pos.lon, hole.center.lat, hole.center.lon);
     addGreenRow('Center of green', mToNum(center), true);
