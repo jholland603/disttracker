@@ -26,7 +26,7 @@
 
 <!-- Google AdSense: ca-pub-7581999835206831 -->
 <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7581999835206831" crossorigin="anonymous"></script>
-<link rel="stylesheet" href="styles.css?v=2.0.22">
+<link rel="stylesheet" href="styles.css?v=2.0.23">
 </head>
 <body>
 <div class="page-wrap">
@@ -826,7 +826,7 @@
 
       <div style="text-align:center; padding: 16px 0 8px; font-family:'DM Mono',monospace; font-size:9px; color:#666; letter-spacing:2px;">
         DIST TRKR · GPS · DISTANCE · TRACKER<br>
-        <span style="color:#777; font-size:11px; letter-spacing:1px;">v2.0.22</span>
+        <span style="color:#777; font-size:11px; letter-spacing:1px;">v2.0.23</span>
       </div>
 
     </div>
@@ -3392,13 +3392,12 @@ function openHoleMap() {
     bounds.push([t.lat, t.lon]);
   });
 
-  // Player position
+  // Player position — plot but don't include in bounds
   const pos = golfCurrentPos;
   if (pos) {
     L.circleMarker([pos.lat, pos.lon], {
       radius: 7, color: '#00e5ff', fillColor: '#00e5ff', fillOpacity: 0.9, weight: 2
     }).addTo(golfHoleLeafletMap).bindTooltip('You', { permanent: false });
-    bounds.push([pos.lat, pos.lon]);
   }
 
   // Fit map to all features
