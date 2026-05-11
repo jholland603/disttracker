@@ -2,176 +2,275 @@
 
 ---
 
-## [v1.9.17] — 2026-05-07
+## [v2.0.40] — 2026-05-11
 ### Changed
-- Auto-advance now limited to next hole only — can never skip more than one hole at a time
+- Help tab Golf GPS section fully rewritten to cover all new features
+- Log help section updated to mention GOLF badge and scorecard detail view
 
-## [v1.9.16]
+## [v2.0.39] — 2026-05-11
 ### Added
-- Auto-advance to next hole when standing within 20m of a tee box for 30 seconds
-- Green notification bar shows countdown and confirmation
-- Manual hole change cancels any pending auto-advance
-- Forward only — never advances backwards
-
-## [v1.9.15]
-### Changed
-- Tee labels: color name if OSM colour tag available, else Back/Forward/yardage
-- Forward tee now shows yardage (e.g. "Forward — 312 YD")
-- Middle tees labeled as "XXX YD to hole"
-- Color styling restored when colour data is present
-
-## [v1.9.14]
+- Tap the dimmed par number to instantly record par with one tap
+- Hint text updated to "TAP TO RECORD PAR" when hole is unscored
 ### Fixed
-- Course list buttons not clickable — variable name collision (`holes` string shadowing `holes` array)
+- Auto-par now fires correctly when tapping a scorecard cell to jump forward
+- Front-9 auto-par fixed when starting on back 9 and looping
 
-## [v1.9.13]
+## [v2.0.38] — 2026-05-11
 ### Fixed
-- Tee deduplication threshold tightened (11m → 3m) so distinct tee boxes no longer merge
-### Changed
-- Tees sorted longest to shortest by distance to green
-- Back tee labeled "Back — XXX YD", Forward tee labeled "Forward", middle shows yardage
+- Back button and View Hole button showing raw unicode escape sequences (Python encoding bug)
 
-## [v1.9.12]
+## [v2.0.37] — 2026-05-11
 ### Changed
-- Removed color-based tee sorting — now sorts by actual distance to green (longest first)
-- Universal approach works for any course regardless of color naming
+- Removed background map from detail card overlay (was unreliable, not worth complexity)
+- Detail card restored to clean dark overlay with full height
+- View Hole button opens satellite map as before
 
-## [v1.9.11]
+## [v2.0.34] — 2026-05-11
 ### Added
-- Tee matching now parses OSM name tags like "T10" → hole 10 as fallback when ref tag missing
-- Par and handicap pulled from golf=hole ways and displayed under hole number
-- golf=hole ways added to Overpass query
+- Custom Yes/No confirm modal replaces browser confirm() dialogs throughout finish round flow
+- Finish Round, Save Round, and par review now use styled modal with Yes/No buttons
+
+## [v2.0.33] — 2026-05-11
 ### Fixed
-- Tee boxes now appear on all holes at Rochester CC (was only showing hole 1)
+- golfStartHole and golfHasLooped now saved and restored from localStorage — fixes -36 bug on page refresh
+- Sparse array null pollution fixed: null entries in restored golfScores no longer treated as score 0
 
-## [v1.9.10]
+## [v2.0.32] — 2026-05-10
 ### Changed
-- Log hint updated: "Tap to view · 👈 Swipe LEFT to delete"
+- Detail card background semi-transparent with backdrop blur (frosted glass effect)
+- Map visible behind card when background map is active
 
-## [v1.9.9]
+## [v2.0.29] — 2026-05-10
+### Changed
+- Distance number wrapped in subtle tappable card with faint border and TAP FOR DETAILS hint
+- Background map removed from main hole screen (was decorative, now only in detail/map views)
+
+## [v2.0.28] — 2026-05-10
 ### Added
-- Measure tab pulses with cyan glow after any save (P2P or Route) to guide user back
+- Satellite map visible as background behind hole detail card
+- View Hole button opens full interactive map
+- Two distances shown on pin drop: FROM YOU and TO GREEN
+- Back arrow (‹ Back) replaces ✕ close button on both detail card and map — upper-left iOS standard placement
 
-## [v1.9.8]
+## [v2.0.27] — 2026-05-10
 ### Changed
-- Point to Point save now switches to Log tab (same as Route)
-- Log hint updated
+- Tee box icons in detail card changed from ⛳ emoji to colored circles matching tee color
 
-## [v1.9.7]
-### Added
-- Tab persistence — refresh returns to same tab
-- Golf state persistence — selected course and hole survive refresh
-- Route trace threshold bumped from 5m to 10m to filter GPS drift
-
-## [v1.9.6]
-### Changed
-- Help tab fully rewritten to cover all current features: Route, Golf GPS, Keep Awake, Log badges, map view
-
-## [v1.9.5]
+## [v2.0.26] — 2026-05-10
 ### Fixed
-- Logo now actually 25% smaller (was being overridden by CSS container width)
+- Pin anchor set to tip (bottom point) of triangle so measurement is from exact pin position
 
-## [v1.9.4]
+## [v2.0.25] — 2026-05-10
+### Changed
+- Measure pin enlarged 2.5x (8×20px → 20×50px) with stronger glow
+
+## [v2.0.24] — 2026-05-10
+### Added
+- Tap-to-measure on satellite hole map: drop a pin, see distance in bottom bar
+- Drag pin for live distance updates
+- Distance bar shows FROM YOU and TO GREEN simultaneously
+
+## [v2.0.23] — 2026-05-10
 ### Fixed
-- Logo CSS container max-height corrected to 165px
+- Satellite hole map now fits to hole features only (green, tees, hazards) — no longer zooms to show player's home location
 
-## [v1.9.3]
+## [v2.0.22] — 2026-05-10
+### Added
+- 🛰️ View Hole button at bottom of detail card
+- Full-screen satellite hole map (Esri World Imagery) showing green polygon, hazard polygons, color-coded tee markers, player position
+
+## [v2.0.21] — 2026-05-10
 ### Changed
-- Keep Awake moved to same row as speed toggle (P2P) and pause button (Route)
-- All three Keep Awake buttons stay in sync
+- Detail card green distances reordered: Back of green on top, Center (large), Front below
 
-## [v1.9.2]
-### Changed
-- Logo reduced 25% in both header and welcome screen
-- Keep Awake buttons more prominent — frosted background, larger padding
-
-## [v1.9.1]
-### Added
-- Mode selector at top of Measure tab: Point to Point / Route
-- Route mode layout with Start, Stop & Save, Pause buttons
-- Active route state persists across page refresh (disttrkr_trace)
-- Mode preference persisted (disttrkr_mode)
-### Removed
-- Old "Trace Route" section at bottom of measure screen
-
-## [v1.9.0]
-### Added
-- Route tracing — records GPS points every 5m, totals distance as you walk
-- Pause/resume route tracing
-- Routes saved to Log with ROUTE badge
-- Routes viewable on map as yellow polyline with Start/End markers
-- POINT TO POINT badge on existing measurements
-- Detail view adapts for route entries (point count, start/end coords)
-
-## [v1.8.1]
-### Added
-- Golf tab between Measure and Log
-- Find nearby courses via Overpass API (5km radius)
-- Live distance to center of green
-- Hole navigation with wrap-around (‹ ›)
-- Tee distances with Back/Forward labels
-- Par and handicap display
-- YD/M unit toggle
-- Keep Awake button on Golf tab
-- Golf state and tab persist across refresh
-- Auto-dim overlay after 10 seconds when Keep Awake active
-- Wake Lock API integration
-
-## [v1.8]
-### Changed
-- Moved "View on Map" button to between date/time and distance cards in detail view
-- GitHub → Netlify auto-deploy configured (no more manual upload credits)
-### Added
-- ads.txt for AdSense verification
-
-## [v1.7]
-### Added
-- Meters (M) and Kilometers (KM) unit options
-- Feet (FT) unit button
-- Clear log button (separate from Reset)
-- Elevation change display (▲/▼)
+## [v2.0.20] — 2026-05-10
 ### Fixed
-- Log sort order — newest first on load and after new measurements
+- Detail card header (‹ Back + title) now sticky — stays visible when scrolling long detail lists
+- Only the items list scrolls, not the whole card
 
-## [v1.6]
-### Added
-- Map view: OpenStreetMap + Esri satellite tile toggle
-- Cyan/green pins, dashed line between points
-- "View on Map" button in detail view
+## [v2.0.19] — 2026-05-10
+### Changed
+- Tee box label and hole yardage font changed to match other card labels (var(--sans), 13px, mid color)
 
-## [v1.5]
-### Added
-- GPS warmup buffer with sample counter on Set Point A button
-- Set Point A disabled and pulsing during warmup, enables when ready
-- Speed profiles: Fast, Medium, Accurate
-- LIVE pill — tap to pause/resume live tracking
-- First-visit welcome screen with GO button
+## [v2.0.18] — 2026-05-10
+### Changed
+- Center of green card shows bare number only (no YD label)
+- Tee label and hole yardage shrunk to 13px
 
-## [v1.4]
-### Added
-- Measurement log with swipe-to-delete
-- Detail view with coordinates, elevation, accuracy
-- Rename measurements
-- Export JSON
-- Reset preserves log
+## [v2.0.17] — 2026-05-10
+### Changed
+- Hazard distance format: "TO — 142 YD" / "CARRY — 158 YD" with small gray prefix and large bold number
+- Center of green card enlarged (48px font, cyan tint background)
+- Tee boxes moved to bottom of detail card
+- Hazards now appear before tee boxes
+- Tee rows show hole yardage on left and distance from player on right
 
-## [v1.3]
-### Added
-- localStorage persistence
-- Google Analytics
-- AdSense ad slots
-- SEO/OG meta tags
+## [v2.0.16] — 2026-05-10
+### Changed
+- Detail card order: green distances → hazards → tee boxes
+- Tee boxes sorted shortest to longest
+- Distance from player shown on each tee row
 
-## [v1.2]
-### Added
-- Units: YD (default), FT, MI
+## [v2.0.15] — 2026-05-10
+### Changed
+- Tee detail rows simplified: color name + yardage only, sorted shortest to longest
+- Removed "from you" label and DRIVE prefix
 
-## [v1.1]
-### Added
-- Leaflet.js map integration
+## [v2.0.14] — 2026-05-10
+### Fixed
+- Tee coordinates now correctly extracted from polygon geometry (out geom tags)
+- Auto-advance working again (tee lat/lon was undefined after Overpass query change)
+- Auto-par guard fixed for post-loop holes: (golfHasLooped || prevHole >= golfStartHole)
 
-## [v1.0] — Initial Release
+## [v2.0.13] — 2026-05-10
+### Fixed
+- Scorecard row cells use flex:1 1 0 to prevent collapse into vertical stack
+- Detail card close: pointer-events inheritance issue fully resolved
+
+## [v2.0.12] — 2026-05-10
+### Fixed
+- Scorecard two-row layout: row divs given width:100% so cells fill correctly
+- Detail card ✕ button: event.stopPropagation added directly to button
+
+## [v2.0.11] — 2026-05-10
+### Fixed
+- golfHoleDetail overlay no longer blocks taps when hidden (pointer-events:none)
+
+## [v2.0.10] — 2026-05-10
+### Changed
+- "TAP FOR HOLE DETAILS" hint added below distance unit label
+
+## [v2.0.9] — 2026-05-10
+### Fixed
+- Over/under -36 bug: added golfHasLooped flag; running total excludes pre-start holes until player loops
+- golfHasLooped set when 18→1 wraparound fires
+### Changed
+- Hole number enlarged to 72px, colored cyan with glow — visually distinct from score counter
+
+## [v2.0.8] — 2026-05-10
+### Changed
+- Scorecard split into two rows: holes 1–9 on top, 10–18 on bottom
+- Holes before golfStartHole that are unplayed render at 30% opacity
+
+## [v2.0.7] — 2026-05-10
 ### Added
-- GPS point A to point B measurement
-- Live distance tracking
-- Single HTML file, Netlify deployment
+- 18→1 wraparound auto-advance for split-start rounds (starting hole other than 1)
+- Assumed par review modal when finishing with 8 or 17 holes recorded — shows par-scored holes with +/− adjusters before saving
+
+## [v2.0.6] — 2026-05-10
+### Changed
+- Tee distances moved from main hole screen into Hole Details card
+- Scorecard strip larger cells, more padding
+
+## [v2.0.5] — 2026-05-10
+### Changed
+- greenGeometry stored on hole objects for front/back distance calculation
+- Hole detail card: front, center (large), back of green; hazards with TO/CARRY; tee boxes at bottom
+- Hazard distances use TO/CARRY format
+
+## [v2.0.4] — 2026-05-10
+### Added
+- Hole detail card: tap distance number to open
+- Front / center / back of green distances
+- Hazard distances (TO and CARRY) from current position
+- Tap backdrop or ✕ to close; back button support
+- Overpass query expanded to fetch bunker, water_hazard, lateral_water_hazard, fairway polygons
+- Hazards spatially assigned to nearest hole green
+
+## [v2.0.3] — 2026-05-10
+### Added
+- Weather widget in Golf top bar (between Keep Awake and YD toggle)
+- Shows current conditions (icon + temp) using Open-Meteo API (free, no key)
+- Tap for 12-hour hourly forecast modal
+- Fetches once per session using existing GPS position — no extra battery use
+
+## [v2.0.2] — 2026-05-10
+### Added
+- Finish round saves to Log with full scorecard
+- Golf log entries show green GOLF badge, score vs par, holes played
+- Detail view shows round summary + per-hole scorecard with relative scores
+
+## [v2.0.1] — 2026-05-10
+### Fixed
+- golfStartHole tracked — running total excludes pre-start holes (fixes -36 on back-9 start)
+- Auto-fill par guarded by golfStartHole index
+
+## [v2.0.0] — 2026-05-10
+### Changed
+- CSS extracted to styles.css, JavaScript extracted to app.js (later re-inlined for cache reliability)
+- Logo hidden on mobile screens (max-width: 480px)
+
+---
+
+## [v1.9.59] — 2026-05-08
+### Added
+- Starting hole selector shown after course loads
+- 2-column grid (1–9 left, 10–18 right)
+- Tapping a hole starts round on that hole; golfScores reset
+### Changed
+- Version bump to v1.9.59
+
+## [v1.9.58] — 2026-05-07
+### Changed
+- golfHoles clamped to 18 in buildCourseHoles
+
+## [v1.9.57] — 2026-05-07
+### Fixed
+- Golf inner content div made scrollable
+
+## [v1.9.56] — 2026-05-07
+### Changed
+- Scorecard strip capped at 18 holes
+- Golf tab restores hole view correctly on return
+
+## [v1.9.55] — 2026-05-07
+### Changed
+- Score colors in scorecard strip brightened
+
+## [v1.9.54] — 2026-05-07
+### Changed
+- Course search is a single instant query
+- Scorecard strip repositioned
+
+## [v1.9.53] — 2026-05-07
+### Added
+- Scrollable scorecard strip with SVG score markings (circles/squares)
+
+## [v1.9.52] — 2026-05-07
+### Changed
+- "Courses" renamed to "Finish Round"
+- Confirmation shows round summary
+- Par auto-recorded on hole advance
+
+## [v1.9.51] — 2026-05-07
+### Changed
+- Per-course Overpass query by OSM element ID
+- buildCourseHoles extracted as separate function
+
+## [v1.9.50] — 2026-05-07
+### Changed
+- All courses shown, sorted by distance
+- Greens filtered by proximity at selection
+
+## [v1.9.49] — 2026-05-07
+### Changed
+- Round total reformatted: diff first, then holes, then strokes
+
+## [v1.9.48] — 2026-05-07
+### Fixed
+- Running total handles sparse score array correctly
+
+## [v1.9.47–v1.9.43] — 2026-05-07
+### Various
+- Fallback radius tweaks, par string/number fix, score counter added, tee sorting/labeling
+
+## [v1.9.42] — 2026-05-07
+### Changed
+- Hole navigation no longer wraps; arrows dim at boundaries
+
+## [v1.9.41–v1.9.16] — 2026-05-07
+### Various
+- Auto-advance, tee color coding, warmup independence, tab persistence, route improvements
+
+## [v1.8.1] — Golf tab initial release
+## [v1.0–v1.8] — Core measurement features
