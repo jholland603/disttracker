@@ -26,7 +26,7 @@
 
 <!-- Google AdSense: ca-pub-7581999835206831 -->
 <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7581999835206831" crossorigin="anonymous"></script>
-<link rel="stylesheet" href="styles.css?v=2.0.31">
+<link rel="stylesheet" href="styles.css?v=2.0.34">
 </head>
 <body>
 <div class="page-wrap">
@@ -493,6 +493,31 @@
       </button>
     </div>
 
+    <!-- Custom confirm modal -->
+    <div id="golfConfirmModal" style="
+      display:none; position:fixed; inset:0; z-index:1100;
+      background:rgba(0,0,0,0.75); backdrop-filter:blur(4px);
+      align-items:center; justify-content:center; pointer-events:none;">
+      <div style="
+        background:#1a1a1e; border-radius:20px; width:calc(100% - 48px); max-width:320px;
+        padding:24px 20px 16px; border:1px solid rgba(255,255,255,0.1);">
+        <div id="golfConfirmTitle" style="font-family:var(--display); font-size:18px; font-weight:800; color:var(--text); margin-bottom:8px;"></div>
+        <div id="golfConfirmMsg" style="font-family:var(--sans); font-size:14px; color:var(--mid); margin-bottom:20px; line-height:1.5;"></div>
+        <div style="display:flex; gap:10px;">
+          <button id="golfConfirmNo" style="
+            flex:1; padding:13px; border-radius:12px;
+            background:transparent; border:1px solid var(--border);
+            color:var(--mid); font-family:var(--sans); font-size:15px; font-weight:600;
+            cursor:pointer; -webkit-tap-highlight-color:transparent;">No</button>
+          <button id="golfConfirmYes" style="
+            flex:1; padding:13px; border-radius:12px;
+            background:rgba(0,229,255,0.15); border:1.5px solid rgba(0,229,255,0.35);
+            color:var(--accent); font-family:var(--sans); font-size:15px; font-weight:700;
+            cursor:pointer; -webkit-tap-highlight-color:transparent;">Yes</button>
+        </div>
+      </div>
+    </div>
+
     <!-- Assumed par review modal -->
     <div id="golfParReviewModal" style="
       display:none; position:fixed; inset:0; z-index:1000;
@@ -625,7 +650,8 @@
         <!-- Detail card slides up from bottom -->
         <div onclick="event.stopPropagation()" style="
           position:relative; z-index:2;
-          width:100%; background:#1a1a1e;
+          width:100%; background:rgba(20,20,24,0.82);
+          backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px);
           border-radius:20px 20px 0 0; border-top:1px solid rgba(255,255,255,0.12);
           border-left:1px solid rgba(255,255,255,0.08); border-right:1px solid rgba(255,255,255,0.08);
           display:flex; flex-direction:column;
@@ -869,7 +895,7 @@
 
       <div style="text-align:center; padding: 16px 0 8px; font-family:'DM Mono',monospace; font-size:9px; color:#666; letter-spacing:2px;">
         DIST TRKR · GPS · DISTANCE · TRACKER<br>
-        <span style="color:#777; font-size:11px; letter-spacing:1px;">v2.0.31</span>
+        <span style="color:#777; font-size:11px; letter-spacing:1px;">v2.0.34</span>
       </div>
 
     </div>
@@ -2862,6 +2888,25 @@ function changeHole(dir) {
   document.getElementById('golfNextHole').style.opacity = golfCurrentHole === golfHoles.length - 1 ? '0.3' : '1';
 }
 
+// Custom confirm modal helper
+function showConfirm(title, msg, onYes, onNo) {
+  const modal = document.getElementById('golfConfirmModal');
+  document.getElementById('golfConfirmTitle').textContent = title;
+  document.getElementById('golfConfirmMsg').textContent   = msg;
+  modal.style.display = 'flex';
+  modal.style.pointerEvents = 'auto';
+
+  const close = () => {
+    modal.style.display = 'none';
+    modal.style.pointerEvents = 'none';
+    document.getElementById('golfConfirmYes').onclick = null;
+    document.getElementById('golfConfirmNo').onclick  = null;
+  };
+
+  document.getElementById('golfConfirmYes').onclick = () => { close(); onYes && onYes(); };
+  document.getElementById('golfConfirmNo').onclick  = () => { close(); onNo  && onNo();  };
+}
+
 function confirmFinishRound() {
   let holesPlayed = 0, totalStrokes = 0, totalPar = 0;
   let parKnown = true;
@@ -2877,32 +2922,28 @@ function confirmFinishRound() {
   const diffStr = diff === null ? '' : diff === 0 ? ' · EVEN' : diff > 0 ? ' · +' + diff : ' · ' + diff;
 
   if (holesPlayed === 0) {
-    if (confirm('Finish round and return to course list?')) resetGolfSearch();
+    showConfirm('Finish Round', 'Return to course list?', () => resetGolfSearch());
     return;
   }
 
-  if (!confirm(`Finish round?\n${holesPlayed} holes · ${totalStrokes} strokes${diffStr}`)) return;
+  const summary = `${holesPlayed} holes · ${totalStrokes} strokes${diffStr}`;
 
-  // Check for assumed (auto-par) holes on common round lengths
-  const assumedHoles = golfHoles.reduce((acc, h, i) => {
-    if (golfScores[i] !== undefined && h.par && golfScores[i] === parseInt(h.par)) {
-      // We can't know for certain if this was assumed or genuinely scored par,
-      // but we flag it when round is 8 or 17 holes — one hole short of 9 or 18
-      acc.push(i);
+  showConfirm('Finish Round', summary, () => {
+    const assumedHoles = golfHoles.reduce((acc, h, i) => {
+      if (golfScores[i] !== undefined && h.par && golfScores[i] === parseInt(h.par)) acc.push(i);
+      return acc;
+    }, []);
+    const shouldReview = (holesPlayed === 8 || holesPlayed === 17) && assumedHoles.length > 0;
+
+    if (shouldReview) {
+      openParReviewModal(holesPlayed, totalStrokes, totalPar, parKnown, diff);
+    } else {
+      showConfirm('Save Round', 'Save this round to your Log?',
+        () => { saveGolfRoundToLog(holesPlayed, totalStrokes, totalPar, parKnown, diff); resetGolfSearch(); },
+        () => resetGolfSearch()
+      );
     }
-    return acc;
-  }, []);
-
-  const shouldReview = (holesPlayed === 8 || holesPlayed === 17) && assumedHoles.length > 0;
-
-  if (shouldReview) {
-    openParReviewModal(holesPlayed, totalStrokes, totalPar, parKnown, diff);
-  } else {
-    if (confirm('Save this round to your Log?')) {
-      saveGolfRoundToLog(holesPlayed, totalStrokes, totalPar, parKnown, diff);
-    }
-    resetGolfSearch();
-  }
+  });
 }
 
 // Stores pending save data while modal is open
@@ -2983,10 +3024,10 @@ function confirmParReviewAndSave() {
   });
   const diff = parKnown && totalPar > 0 ? totalStrokes - totalPar : null;
 
-  if (confirm('Save this round to your Log?')) {
-    saveGolfRoundToLog(holesPlayed, totalStrokes, totalPar, parKnown, diff);
-  }
-  resetGolfSearch();
+  showConfirm('Save Round', 'Save this round to your Log?',
+    () => { saveGolfRoundToLog(holesPlayed, totalStrokes, totalPar, parKnown, diff); resetGolfSearch(); },
+    () => resetGolfSearch()
+  );
 }
 
 function saveGolfRoundToLog(holesPlayed, totalStrokes, totalPar, parKnown, diff) {
@@ -3041,6 +3082,8 @@ function resetGolfSearch() {
   document.getElementById('golfStartPrompt').style.display = 'none';
   document.getElementById('golfParReviewModal').style.display = 'none';
   document.getElementById('golfParReviewModal').style.pointerEvents = 'none';
+  document.getElementById('golfConfirmModal').style.display = 'none';
+  document.getElementById('golfConfirmModal').style.pointerEvents = 'none';
   document.getElementById('golfSearchStatus').textContent = '';
 }
 
@@ -3992,7 +4035,14 @@ function restoreTraceState() {
 
 function saveGolfState() {
   if (!golfHoles.length) return;
-  const state = { name: golfCourseName, hole: golfCurrentHole, holes: golfHoles, scores: golfScores };
+  const state = {
+    name:       golfCourseName,
+    hole:       golfCurrentHole,
+    startHole:  golfStartHole,
+    hasLooped:  golfHasLooped,
+    holes:      golfHoles,
+    scores:     golfScores
+  };
   localStorage.setItem('disttrkr_golf', JSON.stringify(state));
 }
 
@@ -4009,8 +4059,16 @@ function restoreGolfState() {
 
     golfCourseName  = state.name;
     golfHoles       = state.holes;
-    golfCurrentHole = state.hole || 0;
-    golfScores      = state.scores || [];
+    golfCurrentHole = state.hole      || 0;
+    golfStartHole   = state.startHole || 0;
+    golfHasLooped   = state.hasLooped || false;
+
+    // JSON serializes sparse arrays with null for empty slots — restore to undefined
+    const rawScores = state.scores || [];
+    golfScores = [];
+    rawScores.forEach((v, i) => {
+      if (v !== null && v !== undefined) golfScores[i] = v;
+    });
 
     document.getElementById('golfCourseName').textContent = golfCourseName;
     document.getElementById('golfSearch').style.display = 'none';
