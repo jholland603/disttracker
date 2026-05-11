@@ -1400,7 +1400,10 @@ function checkTeeProximity(lat, lon) {
     teeProximityTimer = setTimeout(() => {
       if (teeProximityHole === closestHoleIdx) {
         const prevHole = golfCurrentHole;
-        if (golfScores[prevHole] === undefined && prevHole >= golfStartHole && golfHoles[prevHole] && golfHoles[prevHole].par) {
+        const shouldAutopar = golfScores[prevHole] === undefined &&
+          golfHoles[prevHole] && golfHoles[prevHole].par &&
+          (golfHasLooped || prevHole >= golfStartHole);
+        if (shouldAutopar) {
           golfScores[prevHole] = parseInt(golfHoles[prevHole].par);
         }
         golfCurrentHole = closestHoleIdx;
@@ -1650,11 +1653,23 @@ function buildCourseHoles(name, greens, tees, holes, courseEl, hazards) {
       return false;
     });
 
-    const teeCenters = holeTees.map(t => ({
-      lat: t.center ? t.center.lat : t.lat,
-      lon: t.center ? t.center.lon : t.lon,
-      label: t.tags.colour || t.tags.color || t.tags['golf:tee'] || t.tags.tee || null
-    }));
+    const teeCenters = holeTees.map(t => {
+      let lat, lon;
+      if (t.center) {
+        lat = t.center.lat; lon = t.center.lon;
+      } else if (t.geometry && t.geometry.length) {
+        const lats = t.geometry.map(p => p.lat);
+        const lons = t.geometry.map(p => p.lon);
+        lat = (Math.min(...lats) + Math.max(...lats)) / 2;
+        lon = (Math.min(...lons) + Math.max(...lons)) / 2;
+      } else {
+        lat = t.lat; lon = t.lon;
+      }
+      return {
+        lat, lon,
+        label: t.tags.colour || t.tags.color || t.tags['golf:tee'] || t.tags.tee || null
+      };
+    });
 
     const uniqueTees = teeCenters.filter((t, idx, arr) =>
       arr.findIndex(u => Math.abs(u.lat - t.lat) < 0.00003 && Math.abs(u.lon - t.lon) < 0.00003) === idx
@@ -1937,7 +1952,9 @@ function changeHole(dir) {
   const next = golfCurrentHole + dir;
   if (next < 0 || next >= golfHoles.length) return;
   // Auto-record par for hole being left if moving forward and no score entered
-  if (dir > 0 && golfScores[golfCurrentHole] === undefined && golfCurrentHole >= golfStartHole && golfHoles[golfCurrentHole] && golfHoles[golfCurrentHole].par) {
+  if (dir > 0 && golfScores[golfCurrentHole] === undefined &&
+      golfHoles[golfCurrentHole] && golfHoles[golfCurrentHole].par &&
+      (golfHasLooped || golfCurrentHole >= golfStartHole)) {
     golfScores[golfCurrentHole] = parseInt(golfHoles[golfCurrentHole].par);
   }
   golfCurrentHole = next;
@@ -2366,34 +2383,35 @@ function openHoleDetail() {
       red:    '#ff6b6b', yellow: '#ffd600', green: '#39ff14', gold: '#ffb800',
     };
 
-    const teesWithDist = tees.map(t => ({
-      ...t,
-      distToGreen: haversineM(t.lat, t.lon, hole.center.lat, hole.center.lon)
-    })).sort((a, b) => b.distToGreen - a.distToGreen);
+    const teesWithDist = tees
+      .filter(t => t.lat && t.lon)
+      .map(t => ({
+        ...t,
+        distToGreen: haversineM(t.lat, t.lon, hole.center.lat, hole.center.lon)
+      }))
+      .sort((a, b) => a.distToGreen - b.distToGreen);
 
     teesWithDist.forEach((t, idx) => {
-      const isBack    = idx === 0;
-      const isForward = idx === teesWithDist.length - 1 && teesWithDist.length > 1;
-      const colorKey  = t.label ? t.label.toLowerCase() : null;
-      const color     = TEE_COLORS[colorKey] || (isBack ? 'var(--text)' : isForward ? 'var(--accent)' : 'var(--dim)');
+      const isBack   = idx === teesWithDist.length - 1 && teesWithDist.length > 1;
+      const colorKey = t.label ? t.label.toLowerCase() : null;
+      const color    = TEE_COLORS[colorKey] || (isBack ? 'var(--text)' : 'var(--dim)');
       const colorName = t.label ? t.label.charAt(0).toUpperCase() + t.label.slice(1)
-                      : isBack ? 'Back' : isForward ? 'Forward' : 'Tee';
+                      : isBack ? 'Back' : 'Tee';
 
       const row = document.createElement('div');
       row.style.cssText = `display:flex; align-items:center; justify-content:space-between;
         background:rgba(255,255,255,0.04); border-radius:12px; padding:10px 14px;`;
       row.innerHTML = `
         <div style="display:flex; align-items:center; gap:8px;">
-          <span style="font-size:16px;">🏌️</span>
-          <span style="font-family:var(--sans); font-size:13px; color:var(--mid);">${colorName} tee</span>
+          <span style="font-size:16px;">\u26f3</span>
+          <span style="font-family:var(--sans); font-size:13px; color:var(--mid);">${colorName}</span>
         </div>
         <div style="font-family:var(--display); font-size:16px; font-weight:800; color:${color};">
-          ${mToDisp(t.distToGreen)} <span style="font-family:var(--mono); font-size:10px; color:var(--dim);">${unit}</span>
+          ${mToDisp(t.distToGreen)}
         </div>`;
       items.appendChild(row);
     });
   }
-
   // Hazards
   const hazards = hole.hazards || [];
   if (hazards.length === 0) {
