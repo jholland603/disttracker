@@ -2438,8 +2438,8 @@ function openHoleDetail() {
         <div style="display:flex; align-items:center; gap:10px;">
           <span style="font-size:16px;">\u26f3</span>
           <div>
-            <span style="font-family:var(--display); font-size:13px; font-weight:800; color:${color};">${colorName}</span>
-            <span style="font-family:var(--display); font-size:13px; font-weight:800; color:var(--dim); margin-left:8px;">${mToDisp(t.distToGreen)}</span>
+            <span style="font-family:var(--sans); font-size:13px; color:var(--mid);">${colorName}</span>
+            <span style="font-family:var(--sans); font-size:13px; color:var(--dim); margin-left:6px;">${mToDisp(t.distToGreen)}</span>
           </div>
         </div>
         ${t.distFromPlayer !== null
