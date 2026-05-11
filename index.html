@@ -26,7 +26,7 @@
 
 <!-- Google AdSense: ca-pub-7581999835206831 -->
 <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7581999835206831" crossorigin="anonymous"></script>
-<link rel="stylesheet" href="styles.css?v=2.0.27">
+<link rel="stylesheet" href="styles.css?v=2.0.28">
 </head>
 <body>
 <div class="page-wrap">
@@ -529,6 +529,13 @@
     <!-- Active hole view -->
     <div id="golfHoleView" style="display:none; position:relative; flex:1; flex-direction:column; min-height:0;">
 
+      <!-- Background satellite map (non-interactive, dimmed) -->
+      <div id="golfBgMapContainer" style="position:absolute; inset:0; z-index:0; opacity:0;"></div>
+      <div id="golfBgMapOverlay" style="position:absolute; inset:0; z-index:1; background:rgba(0,0,0,0.55); pointer-events:none;"></div>
+
+      <!-- All UI content sits above the map -->
+      <div style="position:relative; z-index:2; display:flex; flex-direction:column; flex:1; min-height:0;">
+
       <!-- Course + hole header -->
       <div style="padding:12px 16px 0; flex-shrink:0;">
         <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:4px;">
@@ -601,6 +608,8 @@
         </div>
       </div>
 
+      </div><!-- end UI content wrapper -->
+
       <!-- Hole detail overlay — tap distance to open, tap anywhere to close -->
       <div id="golfHoleDetail" onclick="closeHoleDetail()" style="
         display:none; position:absolute; inset:0; z-index:50;
@@ -612,16 +621,19 @@
           border-radius:20px; border:1px solid rgba(255,255,255,0.1);
           display:flex; flex-direction:column;
           max-height:calc(100% - 32px); pointer-events:auto;">
-          <!-- Sticky header -->
+          <!-- Back arrow header -->
           <div style="display:flex; justify-content:space-between; align-items:center;
-            padding:16px 16px 12px; flex-shrink:0;
+            padding:12px 16px 12px; flex-shrink:0;
             border-bottom:1px solid rgba(255,255,255,0.07);">
-            <div id="golfDetailTitle" style="font-family:var(--display); font-size:20px; font-weight:800; color:var(--text);"></div>
             <button onclick="event.stopPropagation(); closeHoleDetail();" style="
-              background:rgba(255,255,255,0.08); border:none; color:#bbb;
-              font-size:16px; width:34px; height:34px; border-radius:50%;
+              background:none; border:none; color:var(--accent);
+              font-family:var(--sans); font-size:15px; font-weight:700;
               cursor:pointer; -webkit-tap-highlight-color:transparent; pointer-events:auto;
-              flex-shrink:0;">✕</button>
+              display:flex; align-items:center; gap:4px; padding:0;">
+              ‹ Back
+            </button>
+            <div id="golfDetailTitle" style="font-family:var(--display); font-size:18px; font-weight:800; color:var(--text);"></div>
+            <div style="width:60px;"></div><!-- spacer to center title -->
           </div>
           <!-- Scrollable items -->
           <div id="golfDetailItems" style="
@@ -650,22 +662,35 @@
           display:flex; justify-content:space-between; align-items:center;
           padding:12px 16px; background:rgba(0,0,0,0.85);
           border-bottom:1px solid rgba(255,255,255,0.1); flex-shrink:0; z-index:1;">
-          <div id="golfHoleMapTitle" style="font-family:var(--display); font-size:16px; font-weight:800; color:var(--text);"></div>
           <button onclick="closeHoleMap()" style="
-            background:rgba(255,255,255,0.08); border:none; color:#bbb;
-            font-size:16px; width:34px; height:34px; border-radius:50%;
-            cursor:pointer; -webkit-tap-highlight-color:transparent;">✕</button>
+            background:none; border:none; color:var(--accent);
+            font-family:var(--sans); font-size:15px; font-weight:700;
+            cursor:pointer; -webkit-tap-highlight-color:transparent;
+            display:flex; align-items:center; gap:4px; padding:0;">
+            ‹ Back
+          </button>
+          <div id="golfHoleMapTitle" style="font-family:var(--display); font-size:16px; font-weight:800; color:var(--text);"></div>
+          <div style="width:60px;"></div><!-- spacer -->
         </div>
         <!-- Map container -->
         <div id="golfHoleMapContainer" style="flex:1; width:100%; position:relative;"></div>
         <!-- Distance bar — shown after first tap -->
         <div id="golfHoleMapDistBar" style="
-          display:none; align-items:center; justify-content:center; gap:10px;
-          padding:12px 16px; background:rgba(0,0,0,0.85);
+          display:none; flex-direction:column; align-items:center; justify-content:center;
+          padding:10px 16px; background:rgba(0,0,0,0.85);
           border-top:1px solid rgba(255,255,255,0.1); flex-shrink:0;">
-          <span style="font-family:var(--mono); font-size:11px; color:var(--dim); letter-spacing:1px;">DISTANCE</span>
-          <span id="golfHoleMapDistText" style="font-family:var(--display); font-size:28px; font-weight:800; color:var(--accent);"></span>
-          <span style="font-family:var(--mono); font-size:10px; color:var(--dim);">tap or drag pin to measure</span>
+          <div style="display:flex; gap:24px; align-items:center; justify-content:center;">
+            <div style="text-align:center;">
+              <div style="font-family:var(--mono); font-size:9px; color:var(--dim); letter-spacing:1px; margin-bottom:2px;">FROM YOU</div>
+              <div id="golfHoleMapDistFrom" style="font-family:var(--display); font-size:26px; font-weight:800; color:var(--accent);">—</div>
+            </div>
+            <div style="width:1px; height:36px; background:rgba(255,255,255,0.1);"></div>
+            <div style="text-align:center;">
+              <div style="font-family:var(--mono); font-size:9px; color:var(--dim); letter-spacing:1px; margin-bottom:2px;">TO GREEN</div>
+              <div id="golfHoleMapDistTo" style="font-family:var(--display); font-size:26px; font-weight:800; color:var(--green);">—</div>
+            </div>
+          </div>
+          <div style="font-family:var(--mono); font-size:9px; color:var(--dim); letter-spacing:1px; margin-top:4px;">TAP OR DRAG TO MEASURE</div>
         </div>
       </div>
     </div>
@@ -835,7 +860,7 @@
 
       <div style="text-align:center; padding: 16px 0 8px; font-family:'DM Mono',monospace; font-size:9px; color:#666; letter-spacing:2px;">
         DIST TRKR · GPS · DISTANCE · TRACKER<br>
-        <span style="color:#777; font-size:11px; letter-spacing:1px;">v2.0.27</span>
+        <span style="color:#777; font-size:11px; letter-spacing:1px;">v2.0.28</span>
       </div>
 
     </div>
@@ -2776,6 +2801,9 @@ function renderHole() {
   const hole = golfHoles[golfCurrentHole];
   if (!hole) return;
 
+  // Update background satellite map
+  initHoleBgMap(hole);
+
   document.getElementById('golfHoleNum').textContent = hole.num || (golfCurrentHole + 1);
   document.getElementById('golfPrevHole').style.opacity = golfCurrentHole === 0 ? '0.3' : '1';
   document.getElementById('golfNextHole').style.opacity = golfCurrentHole === golfHoles.length - 1 ? '0.3' : '1';
@@ -3008,6 +3036,7 @@ function resetGolfSearch() {
   document.getElementById('golfParReviewModal').style.display = 'none';
   document.getElementById('golfParReviewModal').style.pointerEvents = 'none';
   document.getElementById('golfSearchStatus').textContent = '';
+  destroyHoleBgMap();
 }
 
 
@@ -3319,6 +3348,52 @@ function closeHoleDetail() {
 
 // ── HOLE SATELLITE MAP ─────────────────────────────────
 let golfHoleLeafletMap = null;
+let golfBgLeafletMap   = null;
+
+function initHoleBgMap(hole) {
+  if (!hole) return;
+  const container = document.getElementById('golfBgMapContainer');
+  if (!container) return;
+
+  // Destroy previous
+  if (golfBgLeafletMap) { golfBgLeafletMap.remove(); golfBgLeafletMap = null; }
+  container.innerHTML = '';
+
+  golfBgLeafletMap = L.map(container, {
+    zoomControl: false, attributionControl: false,
+    dragging: false, touchZoom: false, scrollWheelZoom: false,
+    doubleClickZoom: false, boxZoom: false, keyboard: false,
+    tap: false, interactive: false
+  }).setView([hole.center.lat, hole.center.lon], 17);
+
+  L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+    maxZoom: 20
+  }).addTo(golfBgLeafletMap);
+
+  // Green polygon
+  if (hole.greenGeometry && hole.greenGeometry.length > 0) {
+    L.polygon(hole.greenGeometry.map(p => [p.lat, p.lon]), {
+      color: '#39ff14', weight: 2, fillColor: '#39ff14', fillOpacity: 0.3, interactive: false
+    }).addTo(golfBgLeafletMap);
+  }
+
+  // Fit to hole features
+  const bounds = hole.greenGeometry && hole.greenGeometry.length
+    ? hole.greenGeometry.map(p => [p.lat, p.lon])
+    : [[hole.center.lat, hole.center.lon]];
+  (hole.tees || []).forEach(t => { if (t.lat && t.lon) bounds.push([t.lat, t.lon]); });
+  if (bounds.length > 1) golfBgLeafletMap.fitBounds(bounds, { padding: [20, 20] });
+
+  // Fade in
+  document.getElementById('golfBgMapContainer').style.opacity = '1';
+  setTimeout(() => golfBgLeafletMap && golfBgLeafletMap.invalidateSize(), 150);
+}
+
+function destroyHoleBgMap() {
+  document.getElementById('golfBgMapContainer').style.opacity = '0';
+  if (golfBgLeafletMap) { golfBgLeafletMap.remove(); golfBgLeafletMap = null; }
+  document.getElementById('golfBgMapContainer').innerHTML = '';
+}
 
 function openHoleMap() {
   const hole = golfHoles[golfCurrentHole];
@@ -3330,135 +3405,94 @@ function openHoleMap() {
   mapOverlay.style.display = 'flex';
   mapOverlay.style.flexDirection = 'column';
 
-  // Destroy previous map instance if any
-  if (golfHoleLeafletMap) {
-    golfHoleLeafletMap.remove();
-    golfHoleLeafletMap = null;
-  }
-
+  if (golfHoleLeafletMap) { golfHoleLeafletMap.remove(); golfHoleLeafletMap = null; }
   const container = document.getElementById('golfHoleMapContainer');
   container.innerHTML = '';
 
-  // Init map centered on green
   golfHoleLeafletMap = L.map(container, {
-    zoomControl: true,
-    attributionControl: true,
-    tap: true
+    zoomControl: true, attributionControl: true, tap: true
   }).setView([hole.center.lat, hole.center.lon], 17);
 
-  // Esri satellite tiles
   L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-    maxZoom: 20,
-    attribution: '© <a href="https://www.esri.com">Esri</a> World Imagery'
+    maxZoom: 20, attribution: '© <a href="https://www.esri.com">Esri</a> World Imagery'
   }).addTo(golfHoleLeafletMap);
 
   const bounds = [];
 
-  // Green polygon
   if (hole.greenGeometry && hole.greenGeometry.length > 0) {
     const greenCoords = hole.greenGeometry.map(p => [p.lat, p.lon]);
-    L.polygon(greenCoords, {
-      color: '#39ff14', weight: 2, fillColor: '#39ff14', fillOpacity: 0.25
-    }).addTo(golfHoleLeafletMap).bindTooltip('Green', { permanent: false });
+    L.polygon(greenCoords, { color: '#39ff14', weight: 2, fillColor: '#39ff14', fillOpacity: 0.25 })
+      .addTo(golfHoleLeafletMap).bindTooltip('Green', { permanent: false });
     greenCoords.forEach(c => bounds.push(c));
   } else {
     bounds.push([hole.center.lat, hole.center.lon]);
   }
 
-  // Hazard polygons
-  const HAZARD_COLORS = {
-    bunker:               '#ffd600',
-    water_hazard:         '#00aaff',
-    lateral_water_hazard: '#00aaff',
-    fairway:              '#39ff14',
-    unknown:              '#ff6b6b',
-  };
+  const HAZARD_COLORS = { bunker:'#ffd600', water_hazard:'#00aaff', lateral_water_hazard:'#00aaff', fairway:'#39ff14', unknown:'#ff6b6b' };
   (hole.hazards || []).forEach(h => {
     if (!h.geometry || !h.geometry.length) return;
-    const coords  = h.geometry.map(p => [p.lat, p.lon]);
-    const color   = HAZARD_COLORS[h.type] || '#ff6b6b';
-    const label   = h.name || (h.type === 'bunker' ? 'Bunker' : h.type === 'water_hazard' || h.type === 'lateral_water_hazard' ? 'Water' : 'Hazard');
-    L.polygon(coords, {
-      color, weight: 1.5, fillColor: color, fillOpacity: 0.3
-    }).addTo(golfHoleLeafletMap).bindTooltip(label, { permanent: false });
+    const coords = h.geometry.map(p => [p.lat, p.lon]);
+    const color  = HAZARD_COLORS[h.type] || '#ff6b6b';
+    const label  = h.name || (h.type === 'bunker' ? 'Bunker' : h.type.includes('water') ? 'Water' : 'Hazard');
+    L.polygon(coords, { color, weight: 1.5, fillColor: color, fillOpacity: 0.3 })
+      .addTo(golfHoleLeafletMap).bindTooltip(label);
     coords.forEach(c => bounds.push(c));
   });
 
-  // Tee markers
   const teeIcon = (color) => L.divIcon({
     html: `<div style="width:12px;height:12px;border-radius:50%;background:${color};border:2px solid #fff;box-shadow:0 0 4px rgba(0,0,0,0.8);"></div>`,
     className: '', iconAnchor: [6, 6]
   });
+  const TEE_MAP = { black:'#ccc', blue:'#4488ff', white:'#ffffff', red:'#ff4444', yellow:'#ffdd00', green:'#44ff44', gold:'#ffaa00' };
   (hole.tees || []).forEach(t => {
     if (!t.lat || !t.lon) return;
-    const colorKey = t.label ? t.label.toLowerCase() : null;
-    const TEE_MAP  = { black:'#ccc', blue:'#4488ff', white:'#ffffff', red:'#ff4444', yellow:'#ffdd00', green:'#44ff44', gold:'#ffaa00' };
-    const dotColor = TEE_MAP[colorKey] || '#ffffff';
-    const label    = t.label ? t.label.charAt(0).toUpperCase() + t.label.slice(1) : 'Tee';
-    L.marker([t.lat, t.lon], { icon: teeIcon(dotColor) })
-      .addTo(golfHoleLeafletMap)
-      .bindTooltip(label, { permanent: false });
+    const color = TEE_MAP[t.label ? t.label.toLowerCase() : ''] || '#ffffff';
+    const label = t.label ? t.label.charAt(0).toUpperCase() + t.label.slice(1) : 'Tee';
+    L.marker([t.lat, t.lon], { icon: teeIcon(color) }).addTo(golfHoleLeafletMap).bindTooltip(label);
     bounds.push([t.lat, t.lon]);
   });
 
-  // Player position — plot but don't include in bounds
   const pos = golfCurrentPos;
   if (pos) {
-    L.circleMarker([pos.lat, pos.lon], {
-      radius: 7, color: '#00e5ff', fillColor: '#00e5ff', fillOpacity: 0.9, weight: 2
-    }).addTo(golfHoleLeafletMap).bindTooltip('You', { permanent: false });
+    L.circleMarker([pos.lat, pos.lon], { radius: 7, color: '#00e5ff', fillColor: '#00e5ff', fillOpacity: 0.9, weight: 2 })
+      .addTo(golfHoleLeafletMap).bindTooltip('You');
   }
 
-  // ── TAP / DRAG TO MEASURE ──────────────────────────────
-  // Reference point: player position if available, otherwise green center
+  // ── TAP / DRAG TO MEASURE ──
   const refLat = pos ? pos.lat : hole.center.lat;
   const refLon = pos ? pos.lon : hole.center.lon;
-
-  // Distance bar at bottom of map
   const distBar = document.getElementById('golfHoleMapDistBar');
-  const distBarText = document.getElementById('golfHoleMapDistText');
+  const distFrom = document.getElementById('golfHoleMapDistFrom');
+  const distTo   = document.getElementById('golfHoleMapDistTo');
   distBar.style.display = 'none';
 
+  const disp = m => Math.round(golfUnit === 'm' ? m : m * 1.09361) + (golfUnit === 'm' ? ' M' : ' YD');
+
   const pinIcon = L.divIcon({
-    html: `<div style="
-      width:0; height:0;
-      border-left:20px solid transparent;
-      border-right:20px solid transparent;
-      border-top:50px solid #00e5ff;
-      filter:drop-shadow(0 0 8px rgba(0,229,255,0.9));"></div>`,
-    className: '',
-    iconAnchor: [20, 50]
+    html: `<div style="width:0;height:0;border-left:20px solid transparent;border-right:20px solid transparent;border-top:50px solid #00e5ff;filter:drop-shadow(0 0 8px rgba(0,229,255,0.9));"></div>`,
+    className: '', iconAnchor: [20, 50]
   });
 
   let measurePin = null;
 
   const updateMeasure = (latlng) => {
-    const d = haversine(refLat, refLon, latlng.lat, latlng.lng);
-    const disp = golfUnit === 'm'
-      ? Math.round(d) + ' M'
-      : Math.round(d * 1.09361) + ' YD';
+    const fromDist = haversine(refLat, refLon, latlng.lat, latlng.lng);
+    const toDist   = haversine(latlng.lat, latlng.lng, hole.center.lat, hole.center.lon);
+    distFrom.textContent = disp(fromDist);
+    distTo.textContent   = disp(toDist);
+    distBar.style.display = 'flex';
 
     if (!measurePin) {
-      measurePin = L.marker(latlng, { icon: pinIcon, draggable: true })
-        .addTo(golfHoleLeafletMap);
+      measurePin = L.marker(latlng, { icon: pinIcon, draggable: true }).addTo(golfHoleLeafletMap);
       measurePin.on('drag', e => updateMeasure(e.latlng));
-      measurePin.on('dragstart', () => { distBar.style.display = 'flex'; });
     } else {
       measurePin.setLatLng(latlng);
     }
-
-    distBarText.textContent = disp;
-    distBar.style.display = 'flex';
   };
 
   golfHoleLeafletMap.on('click', e => updateMeasure(e.latlng));
 
-  // Fit map to all features
-  if (bounds.length > 1) {
-    golfHoleLeafletMap.fitBounds(bounds, { padding: [30, 30] });
-  }
-
-  // Force Leaflet to recalculate size after display:flex resolves
+  if (bounds.length > 1) golfHoleLeafletMap.fitBounds(bounds, { padding: [30, 30] });
   setTimeout(() => golfHoleLeafletMap && golfHoleLeafletMap.invalidateSize(), 100);
 }
 
@@ -3466,10 +3500,9 @@ function closeHoleMap() {
   const mapOverlay = document.getElementById('golfHoleMap');
   mapOverlay.style.display = 'none';
   document.getElementById('golfHoleMapDistBar').style.display = 'none';
-  if (golfHoleLeafletMap) {
-    golfHoleLeafletMap.remove();
-    golfHoleLeafletMap = null;
-  }
+  document.getElementById('golfHoleMapDistFrom').textContent = '—';
+  document.getElementById('golfHoleMapDistTo').textContent = '—';
+  if (golfHoleLeafletMap) { golfHoleLeafletMap.remove(); golfHoleLeafletMap = null; }
 }
 
 // Also close on back button / swipe-back
