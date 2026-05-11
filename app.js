@@ -2313,7 +2313,8 @@ function openHoleDetail() {
   items.innerHTML = '';
 
   const unit = golfUnit === 'm' ? 'M' : 'YD';
-  const mToDisp = m => Math.round(golfUnit === 'm' ? m : m * 1.09361) + ' ' + unit;
+  const mToDisp  = m => Math.round(golfUnit === 'm' ? m : m * 1.09361) + ' ' + unit;
+  const mToNum   = m => String(Math.round(golfUnit === 'm' ? m : m * 1.09361));
 
   const prefix = txt =>
     `<span style="font-family:var(--mono);font-size:10px;font-weight:500;color:var(--dim);letter-spacing:1px;margin-right:4px;">${txt}</span>`;
@@ -2372,13 +2373,13 @@ function openHoleDetail() {
     const { nearest: front, furthest: back } = distToPolygon(pos.lat, pos.lon, hole.greenGeometry);
     const center = haversineM(pos.lat, pos.lon, hole.center.lat, hole.center.lon);
     addGreenRow('Front of green',  mToDisp(front));
-    addGreenRow('Center of green', mToDisp(center), true);
+    addGreenRow('Center of green', mToNum(center), true);
     addGreenRow('Back of green',   mToDisp(back));
   } else if (pos) {
     const center = haversineM(pos.lat, pos.lon, hole.center.lat, hole.center.lon);
-    addGreenRow('Center of green', mToDisp(center), true);
+    addGreenRow('Center of green', mToNum(center), true);
   } else {
-    addGreenRow('Center of green', 'GPS needed', true);
+    addGreenRow('Center of green', '—', true);
   }
 
   // Hazards
@@ -2437,8 +2438,8 @@ function openHoleDetail() {
         <div style="display:flex; align-items:center; gap:10px;">
           <span style="font-size:16px;">\u26f3</span>
           <div>
-            <span style="font-family:var(--display); font-size:16px; font-weight:800; color:${color};">${colorName}</span>
-            <span style="font-family:var(--display); font-size:16px; font-weight:800; color:var(--dim); margin-left:8px;">${mToDisp(t.distToGreen)}</span>
+            <span style="font-family:var(--display); font-size:13px; font-weight:800; color:${color};">${colorName}</span>
+            <span style="font-family:var(--display); font-size:13px; font-weight:800; color:var(--dim); margin-left:8px;">${mToDisp(t.distToGreen)}</span>
           </div>
         </div>
         ${t.distFromPlayer !== null
