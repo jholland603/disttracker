@@ -2320,16 +2320,22 @@ function openHoleDetail() {
 
   const addGreenRow = (label, value, large) => {
     const row = document.createElement('div');
-    row.style.cssText = `display:flex; align-items:center; justify-content:space-between;
-      background:${large ? 'rgba(0,229,255,0.08)' : 'rgba(255,255,255,0.04)'};
-      border:${large ? '1px solid rgba(0,229,255,0.2)' : '1px solid transparent'};
-      border-radius:14px; padding:${large ? '14px 16px' : '10px 14px'};`;
-    row.innerHTML = `
-      <div style="display:flex; align-items:center; gap:8px;">
-        <span style="font-size:${large ? '20px' : '16px'};">⛳</span>
-        <span style="font-family:var(--sans); font-size:${large ? '15px' : '13px'}; color:${large ? 'var(--accent)' : 'var(--mid)'}; font-weight:${large ? '700' : '400'};">${label}</span>
-      </div>
-      <div style="font-family:var(--display); font-size:${large ? '26px' : '16px'}; font-weight:800; color:var(--accent);">${value}</div>`;
+    if (large) {
+      row.style.cssText = `display:flex; align-items:center; justify-content:center;
+        background:rgba(0,229,255,0.08); border:1px solid rgba(0,229,255,0.2);
+        border-radius:14px; padding:16px 14px;`;
+      row.innerHTML = `<div style="font-family:var(--display); font-size:48px; font-weight:800; color:var(--accent); line-height:1;">${value}</div>`;
+    } else {
+      row.style.cssText = `display:flex; align-items:center; justify-content:space-between;
+        background:rgba(255,255,255,0.04); border:1px solid transparent;
+        border-radius:14px; padding:10px 14px;`;
+      row.innerHTML = `
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span style="font-size:16px;">⛳</span>
+          <span style="font-family:var(--sans); font-size:13px; color:var(--mid);">${label}</span>
+        </div>
+        <div style="font-family:var(--display); font-size:16px; font-weight:800; color:var(--accent);">${value}</div>`;
+    }
     items.appendChild(row);
   };
 
@@ -2424,22 +2430,20 @@ function openHoleDetail() {
       const colorName = t.label ? t.label.charAt(0).toUpperCase() + t.label.slice(1)
                       : isBack ? 'Back' : 'Tee';
 
-      const fromPlayerStr = t.distFromPlayer !== null
-        ? `<div style="font-family:var(--mono); font-size:10px; color:var(--dim); margin-top:2px;">${mToDisp(t.distFromPlayer)} from you</div>`
-        : '';
-
       const row = document.createElement('div');
       row.style.cssText = `display:flex; align-items:center; justify-content:space-between;
         background:rgba(255,255,255,0.04); border-radius:12px; padding:10px 14px;`;
       row.innerHTML = `
-        <div style="display:flex; align-items:center; gap:8px;">
-          <span style="font-size:16px;">🏌️</span>
-          <span style="font-family:var(--sans); font-size:13px; color:var(--mid);">${colorName}</span>
+        <div style="display:flex; align-items:center; gap:10px;">
+          <span style="font-size:16px;">\u26f3</span>
+          <div>
+            <span style="font-family:var(--display); font-size:16px; font-weight:800; color:${color};">${colorName}</span>
+            <span style="font-family:var(--display); font-size:16px; font-weight:800; color:var(--dim); margin-left:8px;">${mToDisp(t.distToGreen)}</span>
+          </div>
         </div>
-        <div style="text-align:right;">
-          <div style="font-family:var(--display); font-size:16px; font-weight:800; color:${color};">${mToDisp(t.distToGreen)}</div>
-          ${fromPlayerStr}
-        </div>`;
+        ${t.distFromPlayer !== null
+          ? `<div style="font-family:var(--display); font-size:16px; font-weight:800; color:${color};">${mToDisp(t.distFromPlayer)}</div>`
+          : ''}`;
       items.appendChild(row);
     });
   }
