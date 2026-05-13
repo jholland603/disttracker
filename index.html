@@ -26,7 +26,7 @@
 
 <!-- Google AdSense: ca-pub-7581999835206831 -->
 <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7581999835206831" crossorigin="anonymous"></script>
-<link rel="stylesheet" href="styles.css?v=2.0.38">
+<link rel="stylesheet" href="styles.css?v=2.0.41">
 </head>
 <body>
 <div class="page-wrap">
@@ -649,19 +649,24 @@
           border-radius:20px; border:1px solid rgba(255,255,255,0.1);
           display:flex; flex-direction:column;
           max-height:calc(100% - 32px); pointer-events:auto;">
-          <!-- Back arrow header -->
+          <!-- Header with back button and X -->
           <div style="display:flex; justify-content:space-between; align-items:center;
             padding:12px 16px 12px; flex-shrink:0;
             border-bottom:1px solid rgba(255,255,255,0.07);">
             <button onclick="event.stopPropagation(); closeHoleDetail();" style="
-              background:none; border:none; color:var(--accent);
-              font-family:var(--sans); font-size:15px; font-weight:700;
+              background:rgba(0,229,255,0.08); border:1px solid rgba(0,229,255,0.25);
+              color:var(--accent); font-family:var(--sans); font-size:13px; font-weight:700;
+              padding:6px 12px; border-radius:20px;
               cursor:pointer; -webkit-tap-highlight-color:transparent; pointer-events:auto;
-              display:flex; align-items:center; gap:4px; padding:0;">
+              display:flex; align-items:center; gap:4px;">
               ‹ Back
             </button>
             <div id="golfDetailTitle" style="font-family:var(--display); font-size:18px; font-weight:800; color:var(--text);"></div>
-            <div style="width:60px;"></div>
+            <button onclick="event.stopPropagation(); closeHoleDetail();" style="
+              background:rgba(255,255,255,0.08); border:none; color:#bbb;
+              font-size:16px; width:32px; height:32px; border-radius:50%;
+              cursor:pointer; -webkit-tap-highlight-color:transparent; pointer-events:auto;
+              display:flex; align-items:center; justify-content:center; flex-shrink:0;">✕</button>
           </div>
           <!-- Scrollable items -->
           <div id="golfDetailItems" style="
@@ -691,14 +696,19 @@
           padding:12px 16px; background:rgba(0,0,0,0.85);
           border-bottom:1px solid rgba(255,255,255,0.1); flex-shrink:0; z-index:1;">
           <button onclick="closeHoleMap()" style="
-            background:none; border:none; color:var(--accent);
-            font-family:var(--sans); font-size:15px; font-weight:700;
+            background:rgba(0,229,255,0.08); border:1px solid rgba(0,229,255,0.25);
+            color:var(--accent); font-family:var(--sans); font-size:13px; font-weight:700;
+            padding:6px 12px; border-radius:20px;
             cursor:pointer; -webkit-tap-highlight-color:transparent;
-            display:flex; align-items:center; gap:4px; padding:0;">
+            display:flex; align-items:center; gap:4px;">
             ‹ Back
           </button>
           <div id="golfHoleMapTitle" style="font-family:var(--display); font-size:16px; font-weight:800; color:var(--text);"></div>
-          <div style="width:60px;"></div><!-- spacer -->
+          <button onclick="closeHoleMap()" style="
+            background:rgba(255,255,255,0.08); border:none; color:#bbb;
+            font-size:16px; width:32px; height:32px; border-radius:50%;
+            cursor:pointer; -webkit-tap-highlight-color:transparent;
+            display:flex; align-items:center; justify-content:center;">&#x2715;</button>
         </div>
         <!-- Map container -->
         <div id="golfHoleMapContainer" style="flex:1; width:100%; position:relative;"></div>
@@ -786,34 +796,58 @@
       <!-- GOLF GPS -->
       <div class="help-section">
         <div class="help-section-title">⛳ Golf GPS</div>
-        <div class="help-body" style="padding:0 0 10px;">The Golf tab finds nearby courses using OpenStreetMap data and shows your live distance to the center of each green.</div>
+        <div class="help-body" style="padding:0 0 10px;">The Golf tab finds nearby courses using OpenStreetMap data and gives you live distances, hazard info, satellite maps, scoring, and weather — all in one place.</div>
         <div class="help-item">
           <div class="help-step">1</div>
-          <div class="help-body"><strong>Tap Find Courses Near Me.</strong> The app uses your GPS to search for courses within 5km that have hole data mapped.</div>
+          <div class="help-body"><strong>Tap Find Courses Near Me.</strong> The app uses your GPS to search for courses within 20km that have hole data mapped in OpenStreetMap.</div>
         </div>
         <div class="help-item">
           <div class="help-step">2</div>
-          <div class="help-body"><strong>Tap a course</strong> to load its holes. Only courses with green data mapped will appear.</div>
+          <div class="help-body"><strong>Tap a course</strong> to load its holes. A loading screen appears while hole data is fetched. Only courses with green data will load.</div>
         </div>
         <div class="help-item">
           <div class="help-step">3</div>
-          <div class="help-body"><strong>The large number</strong> shows your live distance to the center of the current green in yards or meters. It updates continuously as you walk.</div>
+          <div class="help-body"><strong>Choose your starting hole.</strong> A grid shows holes 1–9 on the left and 10–18 on the right. Tap any hole to start there — useful for shotgun starts or back-nine tee times.</div>
         </div>
         <div class="help-item">
           <div class="help-step">4</div>
-          <div class="help-body"><strong>Use ‹ › arrows</strong> to navigate between holes. Navigation wraps — tapping ‹ on hole 1 goes to the last hole.</div>
+          <div class="help-body"><strong>The large number</strong> shows your live distance to the center of the current green. It updates continuously as you walk. Tap the number to open the Hole Details card.</div>
         </div>
         <div class="help-item">
           <div class="help-step">5</div>
-          <div class="help-body"><strong>Tee distances</strong> appear below the green yardage if the course has tee box locations mapped. They are color-coded when color data is available.</div>
+          <div class="help-body"><strong>Use ‹ › arrows</strong> or tap any hole in the scorecard to navigate. Moving forward auto-records par for the hole you're leaving if you haven't entered a score.</div>
         </div>
-        <div class="help-tip">⚠️ Golf GPS accuracy depends on OpenStreetMap data quality. Green locations may vary by course. Always verify with on-course yardage markers for competitive play.</div>
+        <div class="help-card">
+          <div class="help-card-title">Hole Details Card</div>
+          <div class="help-card-body">Tap the distance number to open the details card. Shows: front, center, and back of green distances; hazards ahead (bunkers, water) with TO and CARRY distances; tee box yardages from each tee. Tap <strong>🛰️ View Hole</strong> to open the satellite map.</div>
+        </div>
+        <div class="help-card">
+          <div class="help-card-title">Satellite Map</div>
+          <div class="help-card-body">The hole map shows the green (outlined in green), hazards (yellow = bunker, blue = water), and color-coded tee markers. Tap anywhere on the map to drop a pin — the distance bar shows FROM YOU and TO GREEN simultaneously. Drag the pin to update live.</div>
+        </div>
+        <div class="help-card">
+          <div class="help-card-title">Scoring</div>
+          <div class="help-card-body">Use the +/− buttons to record your score. Tap the dimmed par number to instantly record par with one tap. The scorecard shows holes 1–9 on top and 10–18 below, with traditional markings (circle = birdie/eagle, square = bogey/double bogey). The running over/under only counts holes you've actually played.</div>
+        </div>
+        <div class="help-card">
+          <div class="help-card-title">Auto-Advance</div>
+          <div class="help-card-body">Walk to the next tee box and the app automatically advances after 30 seconds. A green notice bar shows the countdown. Moving away cancels it. Works on the 18→1 wraparound for split-start rounds.</div>
+        </div>
+        <div class="help-card">
+          <div class="help-card-title">Finishing a Round</div>
+          <div class="help-card-body">Tap Finish Round to confirm your round summary. You'll be asked if you want to save it to your Log. If you played 8 or 17 holes, the app asks you to review any assumed (auto-par) scores before saving.</div>
+        </div>
+        <div class="help-card">
+          <div class="help-card-title">Weather</div>
+          <div class="help-card-body">The weather widget in the top bar shows current conditions once GPS locks. Tap it for a 12-hour hourly forecast. Weather uses your GPS position — no extra battery drain.</div>
+        </div>
+        <div class="help-tip">⚠️ Golf GPS accuracy depends on OpenStreetMap data quality. Hazard and tee data availability varies by course. Always verify with on-course markers for competitive play.</div>
       </div>
 
       <!-- LOG -->
       <div class="help-section">
         <div class="help-section-title">📋 Log</div>
-        <div class="help-body" style="padding:0 0 10px;">The Log tab stores all your saved measurements and routes. Each entry shows a <span style="font-family:var(--mono);font-size:10px;padding:1px 5px;border-radius:4px;background:rgba(0,229,255,0.1);color:var(--accent);border:1px solid rgba(0,229,255,0.2);">POINT TO POINT</span> or <span style="font-family:var(--mono);font-size:10px;padding:1px 5px;border-radius:4px;background:rgba(255,190,0,0.15);color:#ffbe00;border:1px solid rgba(255,190,0,0.3);">ROUTE</span> badge.</div>
+        <div class="help-body" style="padding:0 0 10px;">The Log tab stores all your saved measurements, routes, and golf rounds. Each entry shows a badge: <span style="font-family:var(--mono);font-size:10px;padding:1px 5px;border-radius:4px;background:rgba(0,229,255,0.1);color:var(--accent);border:1px solid rgba(0,229,255,0.2);">POINT TO POINT</span>, <span style="font-family:var(--mono);font-size:10px;padding:1px 5px;border-radius:4px;background:rgba(255,190,0,0.15);color:#ffbe00;border:1px solid rgba(255,190,0,0.3);">ROUTE</span>, or <span style="font-family:var(--mono);font-size:10px;padding:1px 5px;border-radius:4px;background:rgba(0,200,100,0.15);color:#00c864;border:1px solid rgba(0,200,100,0.3);">GOLF</span>. Golf entries show your score vs par and holes played. Tap any golf entry to see the full scorecard.</div>
         <div class="help-card">
           <div class="help-card-title">Viewing Detail</div>
           <div class="help-card-body">Tap any entry to see full details — coordinates, elevation, accuracy, and all unit conversions. Tap <em>View on Map</em> to see it plotted. Routes draw as a connected path; point-to-point shows a dashed line.</div>
@@ -888,7 +922,7 @@
 
       <div style="text-align:center; padding: 16px 0 8px; font-family:'DM Mono',monospace; font-size:9px; color:#666; letter-spacing:2px;">
         DIST TRKR · GPS · DISTANCE · TRACKER<br>
-        <span style="color:#777; font-size:11px; letter-spacing:1px;">v2.0.38</span>
+        <span style="color:#777; font-size:11px; letter-spacing:1px;">v2.0.41</span>
       </div>
 
     </div>
@@ -2164,6 +2198,15 @@ function adjustScore(delta) {
   saveGolfState();
 }
 
+function recordPar() {
+  const hole = golfHoles[golfCurrentHole];
+  if (!hole || !hole.par) return;
+  golfScores[golfCurrentHole] = parseInt(hole.par);
+  renderScore();
+  renderScorecardStrip();
+  saveGolfState();
+}
+
 function renderScore() {
   const hole = golfHoles[golfCurrentHole];
   const scoreEl  = document.getElementById('golfScoreNum');
@@ -2174,11 +2217,15 @@ function renderScore() {
   const score = golfScores[golfCurrentHole];
   if (score === undefined) {
     scoreEl.textContent  = hole.par ? parseInt(hole.par) : '—';
-    scoreEl.style.color  = 'var(--text)';
-    diffEl.textContent   = hole.par ? 'TAP +/− TO SCORE' : 'NO PAR DATA';
+    scoreEl.style.color  = 'rgba(240,240,240,0.25)';
+    scoreEl.style.cursor = hole.par ? 'pointer' : 'default';
+    scoreEl.onclick      = hole.par ? () => recordPar() : null;
+    diffEl.textContent   = hole.par ? 'TAP TO RECORD PAR' : 'NO PAR DATA';
     diffEl.style.color   = 'var(--dim)';
   } else {
     scoreEl.textContent = score;
+    scoreEl.style.cursor = 'default';
+    scoreEl.onclick      = null;
     const par = hole.par ? parseInt(hole.par) : null;
     if (par) {
       const diff = score - par;
@@ -2721,7 +2768,22 @@ function renderScorecardStrip() {
         background:${isCurrent ? 'rgba(255,255,255,0.08)' : 'transparent'};
         border:${isCurrent ? '1px solid rgba(255,255,255,0.15)' : '1px solid transparent'};
         opacity:${isUnplayed ? '0.3' : '1'};`;
-      cell.onclick = () => { golfCurrentHole = i; saveGolfState(); renderHole(); };
+      cell.onclick = () => {
+        const leaving = golfCurrentHole;
+        // "Forward" in round order means: same direction as play
+        // Before loop: higher index = forward; after loop: lower index (front 9) is forward
+        const isForwardMove = golfHasLooped
+          ? (i < golfStartHole && leaving >= golfStartHole) || (i > leaving && i < golfStartHole) || (i > leaving && leaving >= golfStartHole)
+          : i > leaving;
+        if (isForwardMove && golfScores[leaving] === undefined &&
+            golfHoles[leaving] && golfHoles[leaving].par &&
+            (golfHasLooped || leaving >= golfStartHole)) {
+          golfScores[leaving] = parseInt(golfHoles[leaving].par);
+        }
+        golfCurrentHole = i;
+        saveGolfState();
+        renderHole();
+      };
 
       const num = document.createElement('div');
       num.style.cssText = `font-family:var(--mono); font-size:9px;
