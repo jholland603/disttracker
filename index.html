@@ -26,7 +26,7 @@
 
 <!-- Google AdSense: ca-pub-7581999835206831 -->
 <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7581999835206831" crossorigin="anonymous"></script>
-<link rel="stylesheet" href="styles.css?v=2.0.41">
+<link rel="stylesheet" href="styles.css?v=2.0.42">
 </head>
 <body>
 <div class="page-wrap">
@@ -922,7 +922,7 @@
 
       <div style="text-align:center; padding: 16px 0 8px; font-family:'DM Mono',monospace; font-size:9px; color:#666; letter-spacing:2px;">
         DIST TRKR · GPS · DISTANCE · TRACKER<br>
-        <span style="color:#777; font-size:11px; letter-spacing:1px;">v2.0.41</span>
+        <span style="color:#777; font-size:11px; letter-spacing:1px;">v2.0.42</span>
       </div>
 
     </div>
@@ -2770,11 +2770,18 @@ function renderScorecardStrip() {
         opacity:${isUnplayed ? '0.3' : '1'};`;
       cell.onclick = () => {
         const leaving = golfCurrentHole;
-        // "Forward" in round order means: same direction as play
-        // Before loop: higher index = forward; after loop: lower index (front 9) is forward
+        // Detect wrap: jumping from back 9 to front 9 in a split-start round
+        const isWrap = golfStartHole > 0 && !golfHasLooped &&
+          leaving >= golfStartHole && i < golfStartHole;
+        if (isWrap) golfHasLooped = true;
+
+        // "Forward" in round order
         const isForwardMove = golfHasLooped
-          ? (i < golfStartHole && leaving >= golfStartHole) || (i > leaving && i < golfStartHole) || (i > leaving && leaving >= golfStartHole)
+          ? (i < golfStartHole && leaving >= golfStartHole) ||
+            (i > leaving && i < golfStartHole) ||
+            (i > leaving && leaving >= golfStartHole)
           : i > leaving;
+
         if (isForwardMove && golfScores[leaving] === undefined &&
             golfHoles[leaving] && golfHoles[leaving].par &&
             (golfHasLooped || leaving >= golfStartHole)) {
@@ -2923,14 +2930,32 @@ function updateGolfDistances() {
 
 function changeHole(dir) {
   if (!golfHoles || golfHoles.length === 0) return;
-  const next = golfCurrentHole + dir;
-  if (next < 0 || next >= golfHoles.length) return;
+  let next = golfCurrentHole + dir;
+
+  // Wrap forward from last hole to hole 0 for split-start rounds
+  if (dir > 0 && next >= golfHoles.length) {
+    if (golfStartHole > 0 && !golfHasLooped) {
+      // Split-start round — wrap to hole 0
+      next = 0;
+    } else {
+      return; // Normal round — stop at last hole
+    }
+  }
+
+  if (next < 0) return;
+
   // Auto-record par for hole being left if moving forward and no score entered
   if (dir > 0 && golfScores[golfCurrentHole] === undefined &&
       golfHoles[golfCurrentHole] && golfHoles[golfCurrentHole].par &&
       (golfHasLooped || golfCurrentHole >= golfStartHole)) {
     golfScores[golfCurrentHole] = parseInt(golfHoles[golfCurrentHole].par);
   }
+
+  // Set hasLooped when wrapping from last hole to front 9
+  if (dir > 0 && next < golfCurrentHole && next < golfStartHole) {
+    golfHasLooped = true;
+  }
+
   golfCurrentHole = next;
   clearTimeout(teeProximityTimer);
   teeProximityTimer = null;
@@ -2938,9 +2963,11 @@ function changeHole(dir) {
   hideAdvanceNotice();
   saveGolfState();
   renderHole();
-  // Dim arrows at boundaries
-  document.getElementById('golfPrevHole').style.opacity = golfCurrentHole === 0 ? '0.3' : '1';
-  document.getElementById('golfNextHole').style.opacity = golfCurrentHole === golfHoles.length - 1 ? '0.3' : '1';
+  // Dim next arrow only at true end (last hole of a normal round)
+  const atEnd = !golfHasLooped && golfStartHole === 0 && golfCurrentHole === golfHoles.length - 1;
+  const atStart = golfCurrentHole === 0 && golfStartHole === 0;
+  document.getElementById('golfPrevHole').style.opacity = atStart ? '0.3' : '1';
+  document.getElementById('golfNextHole').style.opacity = atEnd  ? '0.3' : '1';
 }
 
 // Custom confirm modal helper
