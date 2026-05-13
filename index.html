@@ -26,7 +26,7 @@
 
 <!-- Google AdSense: ca-pub-7581999835206831 -->
 <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7581999835206831" crossorigin="anonymous"></script>
-<link rel="stylesheet" href="styles.css?v=2.0.42">
+<link rel="stylesheet" href="styles.css?v=2.0.43">
 </head>
 <body>
 <div class="page-wrap">
@@ -525,29 +525,47 @@
       align-items:flex-end; justify-content:center; pointer-events:none;">
       <div style="
         background:#1a1a1e; border-radius:20px 20px 0 0; width:100%; max-width:480px;
-        padding:20px 16px 32px; border-top:1px solid rgba(255,255,255,0.1);">
-        <div style="font-family:var(--display); font-size:18px; font-weight:800; color:var(--text); margin-bottom:4px;">
-          Confirm assumed scores
+        display:flex; flex-direction:column; max-height:85vh;
+        border-top:1px solid rgba(255,255,255,0.1);">
+        <!-- Sticky header with live totals -->
+        <div style="padding:16px 16px 12px; flex-shrink:0; border-bottom:1px solid rgba(255,255,255,0.07);">
+          <div style="font-family:var(--display); font-size:18px; font-weight:800; color:var(--text); margin-bottom:12px;">Review Scorecard</div>
+          <!-- Live score summary -->
+          <div style="display:flex; gap:8px;">
+            <div style="flex:1; background:rgba(255,255,255,0.04); border-radius:12px; padding:10px 12px; text-align:center;">
+              <div style="font-family:var(--mono); font-size:9px; color:var(--dim); letter-spacing:1px; margin-bottom:4px;">SCORE</div>
+              <div id="reviewTotalStrokes" style="font-family:var(--display); font-size:24px; font-weight:800; color:var(--text);">—</div>
+            </div>
+            <div style="flex:1; background:rgba(255,255,255,0.04); border-radius:12px; padding:10px 12px; text-align:center;">
+              <div style="font-family:var(--mono); font-size:9px; color:var(--dim); letter-spacing:1px; margin-bottom:4px;">VS PAR</div>
+              <div id="reviewVsPar" style="font-family:var(--display); font-size:24px; font-weight:800; color:var(--dim);">—</div>
+            </div>
+            <div style="flex:1; background:rgba(255,255,255,0.04); border-radius:12px; padding:10px 12px; text-align:center;">
+              <div style="font-family:var(--mono); font-size:9px; color:var(--dim); letter-spacing:1px; margin-bottom:4px;">HOLES</div>
+              <div id="reviewHolesPlayed" style="font-family:var(--display); font-size:24px; font-weight:800; color:var(--text);">—</div>
+            </div>
+          </div>
         </div>
-        <div style="font-family:var(--mono); font-size:11px; color:var(--dim); letter-spacing:1px; margin-bottom:16px;">
-          These holes were recorded at par. Adjust if needed.
+        <!-- Scrollable hole list -->
+        <div id="golfParReviewItems" style="flex:1; overflow-y:auto; padding:12px 16px; display:flex; flex-direction:column; gap:8px; -webkit-overflow-scrolling:touch;"></div>
+        <!-- Footer buttons -->
+        <div style="padding:12px 16px 28px; flex-shrink:0; border-top:1px solid rgba(255,255,255,0.07); display:flex; flex-direction:column; gap:8px;">
+          <button onclick="confirmParReviewAndSave()" style="
+            width:100%; padding:16px; border-radius:14px;
+            background:rgba(0,229,255,0.15); color:var(--accent);
+            border:1.5px solid rgba(0,229,255,0.35);
+            font-family:var(--sans); font-size:16px; font-weight:700;
+            cursor:pointer; -webkit-tap-highlight-color:transparent;">
+            Save Round
+          </button>
+          <button onclick="closeParReviewModal()" style="
+            width:100%; padding:12px; border-radius:12px;
+            background:transparent; border:1px solid var(--border);
+            color:var(--mid); font-family:var(--sans); font-size:13px;
+            cursor:pointer; -webkit-tap-highlight-color:transparent;">
+            Cancel
+          </button>
         </div>
-        <div id="golfParReviewItems" style="display:flex; flex-direction:column; gap:8px; max-height:40vh; overflow-y:auto; margin-bottom:16px;"></div>
-        <button onclick="confirmParReviewAndSave()" style="
-          width:100%; padding:16px; border-radius:14px;
-          background:rgba(0,229,255,0.15); color:var(--accent);
-          border:1.5px solid rgba(0,229,255,0.35);
-          font-family:var(--sans); font-size:16px; font-weight:700;
-          cursor:pointer; -webkit-tap-highlight-color:transparent;">
-          Looks good — Save Round
-        </button>
-        <button onclick="closeParReviewModal()" style="
-          width:100%; margin-top:8px; padding:12px; border-radius:12px;
-          background:transparent; border:1px solid var(--border);
-          color:var(--mid); font-family:var(--sans); font-size:13px;
-          cursor:pointer; -webkit-tap-highlight-color:transparent;">
-          Cancel
-        </button>
       </div>
     </div>
 
@@ -562,8 +580,9 @@
         <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:4px;">
           <button onclick="confirmFinishRound()" style="
             font-family:var(--sans); font-size:13px; font-weight:700; color:var(--text);
-            background:transparent; border:none; cursor:pointer; padding:0;
-            -webkit-tap-highlight-color:transparent;">‹ Finish Round</button>
+            background:rgba(255,255,255,0.07); border:1px solid rgba(255,255,255,0.15);
+            border-radius:20px; padding:6px 14px;
+            cursor:pointer; -webkit-tap-highlight-color:transparent;">⛳ Finish Round</button>
           <div id="golfCourseName" style="font-family:var(--mono); font-size:11px; color:var(--dim); letter-spacing:1px; text-align:right; max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"></div>
         </div>
       </div>
@@ -922,7 +941,7 @@
 
       <div style="text-align:center; padding: 16px 0 8px; font-family:'DM Mono',monospace; font-size:9px; color:#666; letter-spacing:2px;">
         DIST TRKR · GPS · DISTANCE · TRACKER<br>
-        <span style="color:#777; font-size:11px; letter-spacing:1px;">v2.0.42</span>
+        <span style="color:#777; font-size:11px; letter-spacing:1px;">v2.0.43</span>
       </div>
 
     </div>
@@ -2177,6 +2196,7 @@ let golfStartHole   = 0;      // index of the hole the round started on
 let golfHasLooped   = false;  // true once player wraps 18→1
 let golfCourseName  = '';
 let golfScores      = [];     // stroke counts per hole, index matches golfHoles
+let golfAutoPar     = new Set(); // indices of holes auto-filled at par
 
 // Conversion helpers
 function toGolfUnit(meters) {
@@ -2189,10 +2209,10 @@ function adjustScore(delta) {
   const hole = golfHoles[golfCurrentHole];
   if (!hole) return;
   if (golfScores[golfCurrentHole] === undefined) {
-    // Start from par as a number, or 0 if no par
     golfScores[golfCurrentHole] = hole.par ? parseInt(hole.par) : 0;
   }
   golfScores[golfCurrentHole] = Math.max(1, golfScores[golfCurrentHole] + delta);
+  golfAutoPar.delete(golfCurrentHole); // manually adjusted
   renderScore();
   renderScorecardStrip();
   saveGolfState();
@@ -2202,6 +2222,7 @@ function recordPar() {
   const hole = golfHoles[golfCurrentHole];
   if (!hole || !hole.par) return;
   golfScores[golfCurrentHole] = parseInt(hole.par);
+  golfAutoPar.delete(golfCurrentHole); // explicitly recorded by user
   renderScore();
   renderScorecardStrip();
   saveGolfState();
@@ -2364,6 +2385,7 @@ function checkTeeProximity(lat, lon) {
           (golfHasLooped || prevHole >= golfStartHole);
         if (shouldAutopar) {
           golfScores[prevHole] = parseInt(golfHoles[prevHole].par);
+          golfAutoPar.add(prevHole);
         }
         golfCurrentHole = closestHoleIdx;
         if (closestHoleIdx < golfStartHole) golfHasLooped = true;
@@ -2726,6 +2748,7 @@ function confirmStartHole(idx) {
   golfCurrentHole = idx;
   golfStartHole   = idx;
   golfHasLooped   = false;
+  golfAutoPar     = new Set();
   golfScores      = [];
   saveGolfState();
 
@@ -2786,6 +2809,7 @@ function renderScorecardStrip() {
             golfHoles[leaving] && golfHoles[leaving].par &&
             (golfHasLooped || leaving >= golfStartHole)) {
           golfScores[leaving] = parseInt(golfHoles[leaving].par);
+          golfAutoPar.add(leaving);
         }
         golfCurrentHole = i;
         saveGolfState();
@@ -2949,6 +2973,7 @@ function changeHole(dir) {
       golfHoles[golfCurrentHole] && golfHoles[golfCurrentHole].par &&
       (golfHasLooped || golfCurrentHole >= golfStartHole)) {
     golfScores[golfCurrentHole] = parseInt(golfHoles[golfCurrentHole].par);
+    golfAutoPar.add(golfCurrentHole);
   }
 
   // Set hasLooped when wrapping from last hole to front 9
@@ -3000,74 +3025,88 @@ function confirmFinishRound() {
     if (h.par) totalPar += parseInt(h.par);
     else parKnown = false;
   });
-  const diff    = parKnown && totalPar > 0 ? totalStrokes - totalPar : null;
-  const diffStr = diff === null ? '' : diff === 0 ? ' · EVEN' : diff > 0 ? ' · +' + diff : ' · ' + diff;
 
   if (holesPlayed === 0) {
     showConfirm('Finish Round', 'Return to course list?', () => resetGolfSearch());
     return;
   }
 
-  const summary = `${holesPlayed} holes · ${totalStrokes} strokes${diffStr}`;
-
-  showConfirm('Finish Round', summary, () => {
-    const assumedHoles = golfHoles.reduce((acc, h, i) => {
-      if (golfScores[i] !== undefined && h.par && golfScores[i] === parseInt(h.par)) acc.push(i);
-      return acc;
-    }, []);
-    const shouldReview = (holesPlayed === 8 || holesPlayed === 17) && assumedHoles.length > 0;
-
-    if (shouldReview) {
-      openParReviewModal(holesPlayed, totalStrokes, totalPar, parKnown, diff);
-    } else {
-      showConfirm('Save Round', 'Save this round to your Log?',
-        () => { saveGolfRoundToLog(holesPlayed, totalStrokes, totalPar, parKnown, diff); resetGolfSearch(); },
-        () => resetGolfSearch()
-      );
-    }
-  });
+  // Always show full review screen
+  openParReviewModal();
 }
 
 // Stores pending save data while modal is open
 let _pendingRoundData = null;
 
-function openParReviewModal(holesPlayed, totalStrokes, totalPar, parKnown, diff) {
-  _pendingRoundData = { holesPlayed, totalStrokes, totalPar, parKnown, diff };
+function updateReviewTotals() {
+  let strokes = 0, par = 0, holes = 0;
+  let parKnown = true;
+  golfHoles.forEach((h, i) => {
+    if (golfScores[i] === undefined) return;
+    if (!golfHasLooped && i < golfStartHole) return;
+    strokes += golfScores[i];
+    holes++;
+    if (h.par) par += parseInt(h.par);
+    else parKnown = false;
+  });
+  const diff = parKnown && par > 0 ? strokes - par : null;
+  const diffStr = diff === null ? '—' : diff === 0 ? 'E' : diff > 0 ? '+' + diff : '' + diff;
+  const diffColor = diff === null ? 'var(--dim)' : diff === 0 ? 'var(--dim)' : diff > 0 ? 'var(--red)' : 'var(--green)';
+  document.getElementById('reviewTotalStrokes').textContent = strokes || '—';
+  document.getElementById('reviewVsPar').textContent = diffStr;
+  document.getElementById('reviewVsPar').style.color = diffColor;
+  document.getElementById('reviewHolesPlayed').textContent = holes || '—';
+}
 
+function openParReviewModal() {
   const container = document.getElementById('golfParReviewItems');
   container.innerHTML = '';
 
-  // Show all par-scored holes as potentially assumed
   golfHoles.forEach((h, i) => {
     if (golfScores[i] === undefined) return;
-    if (!h.par || golfScores[i] !== parseInt(h.par)) return;
+    if (!golfHasLooped && i < golfStartHole) return;
 
-    const par = parseInt(h.par);
+    const par      = h.par ? parseInt(h.par) : null;
+    const score    = golfScores[i];
+    const isAuto   = golfAutoPar.has(i);
+    const diff     = par ? score - par : null;
+    const diffStr  = diff === null ? '' : diff === 0 ? 'E' : diff > 0 ? '+' + diff : '' + diff;
+    const diffColor = diff === null ? 'var(--dim)' : diff === 0 ? 'var(--dim)' : diff > 0 ? 'var(--red)' : 'var(--green)';
+
     const row = document.createElement('div');
     row.style.cssText = `display:flex; align-items:center; justify-content:space-between;
-      background:rgba(255,255,255,0.04); border-radius:12px; padding:10px 14px;`;
+      background:rgba(255,255,255,0.04); border-radius:12px; padding:10px 14px;
+      opacity:${isAuto ? '0.55' : '1'};`;
+
     row.innerHTML = `
       <div>
-        <div style="font-family:var(--sans); font-size:14px; font-weight:700; color:var(--text);">Hole ${h.num || (i+1)}</div>
-        <div style="font-family:var(--mono); font-size:10px; color:var(--dim); margin-top:2px;">Par ${par} · assumed at par</div>
+        <div style="font-family:var(--sans); font-size:14px; font-weight:700; color:var(--text);">
+          Hole ${h.num || (i+1)}${par ? ' · Par ' + par : ''}
+        </div>
+        <div style="font-family:var(--mono); font-size:10px; color:var(--dim); margin-top:2px;">
+          ${isAuto ? 'auto-par' : 'recorded'}
+        </div>
       </div>
       <div style="display:flex; align-items:center; gap:10px;">
-        <button onclick="adjustParReview(${i}, -1)" style="
+        ${isAuto ? '' : `<button onclick="adjustParReview(${i}, -1)" style="
           width:32px; height:32px; border-radius:50%;
           background:rgba(255,61,113,0.12); border:1px solid rgba(255,61,113,0.3);
           color:var(--red); font-size:18px; font-weight:800; cursor:pointer;
-          -webkit-tap-highlight-color:transparent; line-height:1;">−</button>
-        <div id="parReviewScore_${i}" style="
-          font-family:var(--display); font-size:24px; font-weight:800;
-          color:var(--text); min-width:28px; text-align:center;">${par}</div>
-        <button onclick="adjustParReview(${i}, 1)" style="
+          -webkit-tap-highlight-color:transparent; line-height:1;">−</button>`}
+        <div style="text-align:center; min-width:28px;">
+          <div id="parReviewScore_${i}" style="font-family:var(--display); font-size:24px; font-weight:800; color:var(--text);">${score}</div>
+          <div style="font-family:var(--mono); font-size:10px; color:${diffColor};">${diffStr}</div>
+        </div>
+        ${isAuto ? '' : `<button onclick="adjustParReview(${i}, 1)" style="
           width:32px; height:32px; border-radius:50%;
           background:rgba(0,229,255,0.1); border:1px solid rgba(0,229,255,0.25);
           color:var(--accent); font-size:18px; font-weight:800; cursor:pointer;
-          -webkit-tap-highlight-color:transparent; line-height:1;">+</button>
+          -webkit-tap-highlight-color:transparent; line-height:1;">+</button>`}
       </div>`;
     container.appendChild(row);
   });
+
+  updateReviewTotals();
 
   const modal = document.getElementById('golfParReviewModal');
   modal.style.display = 'flex';
@@ -3079,9 +3118,17 @@ function adjustParReview(holeIdx, delta) {
   const newVal  = Math.max(1, current + delta);
   golfScores[holeIdx] = newVal;
 
-  // Update display
   const el = document.getElementById(`parReviewScore_${holeIdx}`);
-  if (el) el.textContent = newVal;
+  if (el) {
+    el.textContent = newVal;
+    const par = golfHoles[holeIdx] && golfHoles[holeIdx].par ? parseInt(golfHoles[holeIdx].par) : null;
+    const diff = par ? newVal - par : null;
+    const diffStr = diff === null ? '' : diff === 0 ? 'E' : diff > 0 ? '+' + diff : '' + diff;
+    const diffColor = diff === null ? 'var(--dim)' : diff === 0 ? 'var(--dim)' : diff > 0 ? 'var(--red)' : 'var(--green)';
+    const diffEl = el.nextElementSibling;
+    if (diffEl) { diffEl.textContent = diffStr; diffEl.style.color = diffColor; }
+  }
+  updateReviewTotals();
 }
 
 function closeParReviewModal() {
@@ -3094,11 +3141,11 @@ function closeParReviewModal() {
 function confirmParReviewAndSave() {
   closeParReviewModal();
 
-  // Recalculate totals after any adjustments
   let holesPlayed = 0, totalStrokes = 0, totalPar = 0;
   let parKnown = true;
   golfHoles.forEach((h, i) => {
     if (golfScores[i] === undefined) return;
+    if (!golfHasLooped && i < golfStartHole) return;
     holesPlayed++;
     totalStrokes += golfScores[i];
     if (h.par) totalPar += parseInt(h.par);
@@ -4090,7 +4137,8 @@ function saveGolfState() {
     startHole:  golfStartHole,
     hasLooped:  golfHasLooped,
     holes:      golfHoles,
-    scores:     golfScores
+    scores:     golfScores,
+    autoPar:    [...golfAutoPar]
   };
   localStorage.setItem('disttrkr_golf', JSON.stringify(state));
 }
@@ -4111,6 +4159,7 @@ function restoreGolfState() {
     golfCurrentHole = state.hole      || 0;
     golfStartHole   = state.startHole || 0;
     golfHasLooped   = state.hasLooped || false;
+    golfAutoPar     = new Set(state.autoPar || []);
 
     // JSON serializes sparse arrays with null for empty slots — restore to undefined
     const rawScores = state.scores || [];
