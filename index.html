@@ -26,7 +26,7 @@
 
 <!-- Google AdSense: ca-pub-7581999835206831 -->
 <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7581999835206831" crossorigin="anonymous"></script>
-<link rel="stylesheet" href="styles.css?v=2.0.45">
+<link rel="stylesheet" href="styles.css?v=2.0.46">
 </head>
 <body>
 <div class="page-wrap">
@@ -535,8 +535,8 @@
             display:none; font-family:var(--mono); font-size:10px; color:#ffbe00;
             letter-spacing:1px; margin-bottom:10px; text-align:center;
             background:rgba(255,190,0,0.08); border-radius:8px; padding:6px;"></div>
-          <!-- Live score summary -->
-          <div style="display:flex; gap:8px;">
+          <!-- Row 1: Score / VS Par / Holes -->
+          <div style="display:flex; gap:8px; margin-bottom:8px;">
             <div style="flex:1; background:rgba(255,255,255,0.04); border-radius:12px; padding:10px 12px; text-align:center;">
               <div style="font-family:var(--mono); font-size:9px; color:var(--dim); letter-spacing:1px; margin-bottom:4px;">SCORE</div>
               <div id="reviewTotalStrokes" style="font-family:var(--display); font-size:24px; font-weight:800; color:var(--text);">—</div>
@@ -548,6 +548,17 @@
             <div style="flex:1; background:rgba(255,255,255,0.04); border-radius:12px; padding:10px 12px; text-align:center;">
               <div style="font-family:var(--mono); font-size:9px; color:var(--dim); letter-spacing:1px; margin-bottom:4px;">HOLES</div>
               <div id="reviewHolesPlayed" style="font-family:var(--display); font-size:24px; font-weight:800; color:var(--text);">—</div>
+            </div>
+          </div>
+          <!-- Row 2: True Total / Assumed Total -->
+          <div style="display:flex; gap:8px;">
+            <div style="flex:1; background:rgba(57,255,20,0.06); border:1px solid rgba(57,255,20,0.15); border-radius:12px; padding:10px 12px; text-align:center;">
+              <div style="font-family:var(--mono); font-size:9px; color:var(--dim); letter-spacing:1px; margin-bottom:4px;">TRUE TOTAL</div>
+              <div id="reviewTrueTotal" style="font-family:var(--display); font-size:20px; font-weight:800; color:var(--green);">—</div>
+            </div>
+            <div style="flex:1; background:rgba(255,190,0,0.06); border:1px solid rgba(255,190,0,0.15); border-radius:12px; padding:10px 12px; text-align:center;">
+              <div style="font-family:var(--mono); font-size:9px; color:var(--dim); letter-spacing:1px; margin-bottom:4px;" id="reviewAssumedLabel">ASSUMED</div>
+              <div id="reviewAssumedTotal" style="font-family:var(--display); font-size:20px; font-weight:800; color:#ffbe00;">—</div>
             </div>
           </div>
         </div>
@@ -946,7 +957,7 @@
 
       <div style="text-align:center; padding: 16px 0 8px; font-family:'DM Mono',monospace; font-size:9px; color:#666; letter-spacing:2px;">
         DIST TRKR · GPS · DISTANCE · TRACKER<br>
-        <span style="color:#777; font-size:11px; letter-spacing:1px;">v2.0.45</span>
+        <span style="color:#777; font-size:11px; letter-spacing:1px;">v2.0.46</span>
       </div>
 
     </div>
@@ -3044,23 +3055,44 @@ let _pendingRoundData = null;
 
 function updateReviewTotals() {
   let strokes = 0, par = 0, holes = 0, assumed = 0;
+  let trueStrokes = 0, trueHoles = 0;
+  let assumedStrokes = 0;
   let parKnown = true;
+
+  const inRound = (i) => golfHasLooped || i >= golfStartHole;
+
+  const hasFrontManual = golfHoles.slice(0, 9).some((h, ri) =>
+    inRound(ri) && golfScores[ri] !== undefined && !golfAutoPar.has(ri));
+  const hasBackManual = golfHoles.slice(9, 18).some((h, ri) =>
+    inRound(ri + 9) && golfScores[ri + 9] !== undefined && !golfAutoPar.has(ri + 9));
+
   golfHoles.forEach((h, i) => {
     if (golfScores[i] === undefined) return;
-    if (!golfHasLooped && i < golfStartHole) return;
-    strokes += golfScores[i];
+    if (!inRound(i)) return;
+    const s = golfScores[i];
+    strokes += s;
     holes++;
-    if (golfAutoPar.has(i)) assumed++;
     if (h.par) par += parseInt(h.par);
     else parKnown = false;
+    if (golfAutoPar.has(i)) { assumed++; assumedStrokes += s; }
+    else { trueStrokes += s; trueHoles++; }
   });
+
   const diff = parKnown && par > 0 ? strokes - par : null;
-  const diffStr  = diff === null ? '\u2014' : diff === 0 ? 'E' : diff > 0 ? '+' + diff : '' + diff;
+  const diffStr   = diff === null ? '\u2014' : diff === 0 ? 'E' : diff > 0 ? '+' + diff : '' + diff;
   const diffColor = diff === null ? 'var(--dim)' : diff === 0 ? 'var(--dim)' : diff > 0 ? 'var(--red)' : 'var(--green)';
+
   document.getElementById('reviewTotalStrokes').textContent = strokes || '\u2014';
   document.getElementById('reviewVsPar').textContent = diffStr;
   document.getElementById('reviewVsPar').style.color = diffColor;
   document.getElementById('reviewHolesPlayed').textContent = holes || '\u2014';
+  document.getElementById('reviewTrueTotal').textContent = trueHoles > 0 ? trueStrokes : '\u2014';
+
+  const sidesPlayed = (hasFrontManual ? 1 : 0) + (hasBackManual ? 1 : 0);
+  const assumedLabel = sidesPlayed === 2 ? 'ASSUMED (18)' : sidesPlayed === 1 ? 'ASSUMED (9)' : 'ASSUMED';
+  document.getElementById('reviewAssumedLabel').textContent = assumedLabel;
+  document.getElementById('reviewAssumedTotal').textContent = assumed > 0 ? assumedStrokes : '\u2014';
+
   const assumedEl = document.getElementById('reviewAssumedCount');
   if (assumedEl) {
     assumedEl.textContent = assumed > 0 ? assumed + ' hole' + (assumed > 1 ? 's' : '') + ' assumed at par' : '';
